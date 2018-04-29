@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Application</title>
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+    <%= stylesheet_link_tag    'handsontable.full', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'handsontable.full', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'encoding', 'data-turbolinks-track': 'reload'  %>
+    <%= include_gon %>
+
+    <%= stylesheet_link_tag    'bootstrap.min', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'bootstrap.min', 'data-turbolinks-track': 'reload' %>
+
+    <style type="text/css">
+    body { padding-top: 80px; }
+
+    @media ( min-width: 768px ) {
+      #banner {
+        min-height: 300px;
+        border-bottom: none;
+      }
+      .bs-docs-section {
+        margin-top: 8em;
+      }
+      .bs-component {
+        position: relative;
+      }
+      .bs-component .modal {
+        position: relative;
+        top: auto;
+        right: auto;
+        left: auto;
+        bottom: auto;
+        z-index: 1;
+        display: block;
+      }
+      .bs-component .modal-dialog {
+        width: 90%;
+      }
+      .bs-component .popover {
+        position: relative;
+        display: inline-block;
+        width: 220px;
+        margin: 20px;
+      }
+      .nav-tabs {
+        margin-bottom: 15px;
+      }
+      .progress {
+        margin-bottom: 10px;
+      }
+    }
+    </style>
+
+    <!--[if lt IE 9]>
+      <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body class="no-thank-yu">
+    <header>
+      <nav class="navbar navbar-dark bg-primary navbar-fixed-top">
+        <div class="container">
+        	<a href="http://ec-merchant.com/" class="navbar-brand">EC-merchant</a>
+        	<button class="navbar-toggler hidden-sm-up float-xs-right" type="button" data-toggle="collapse" data-target="#navbar-header" aria-controls="navbar-header" aria-expanded="false" aria-label="Toggle navigation"></button>
+    			<div class="clearfix hidden-sm-up"></div> <!-- fix navbar responsive bug -->
+          <div class="collapse navbar-toggleable-xs" id="navbar-header">
+            <ul class="nav navbar-nav">
+              <li class="nav-item">
+                <a href="/products/search" class="nav-link">Top</a>
+              </li>
+              <li class="nav-item">
+                <a href="/products/upload" class="nav-link">Upload</a>
+              </li>
+              <li class="nav-item">
+                <a href="/products/setup" class="nav-link">Setup</a>
+              </li>
+              <li class="nav-item active">
+                <a href="/users/sign_out" class="nav-link">Log-out</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <div class="container">
+      <%= yield %>
+    </div>
+
+  </body>
+</html>
