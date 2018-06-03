@@ -1,0 +1,11 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: MyString
+  seller_id: MyString
+  mws_auth_token: MyString
+
+two:
+  user: MyString
+  seller_id: MyString
+  mws_auth_token: MyString

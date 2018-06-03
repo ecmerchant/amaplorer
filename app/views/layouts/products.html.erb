@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Application</title>
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+    <%= stylesheet_link_tag    'handsontable.full', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'handsontable.full', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'encoding', 'data-turbolinks-track': 'reload'  %>
+    <%= include_gon %>
+
+    <%= stylesheet_link_tag    'bootstrap.min', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'bootstrap.min', 'data-turbolinks-track': 'reload' %>
+
+    <style type="text/css">
+      body { padding-top: 80px; }
+
+      @media ( min-width: 768px ) {
+        #banner {
+          min-height: 300px;
+          border-bottom: none;
+        }
+        .bs-docs-section {
+          margin-top: 8em;
+        }
+        .bs-component {
+          position: relative;
+        }
+        .bs-component .modal {
+          position: relative;
+          top: auto;
+          right: auto;
+          left: auto;
+          bottom: auto;
+          z-index: 1;
+          display: block;
+        }
+        .bs-component .modal-dialog {
+          width: 90%;
+        }
+        .bs-component .popover {
+          position: relative;
+          display: inline-block;
+          width: 220px;
+          margin: 20px;
+        }
+        .nav-tabs {
+          margin-bottom: 15px;
+        }
+        .progress {
+          margin-bottom: 10px;
+        }
+      }
+
+      table.table-headerfixed {
+      /*    width: 100%;*/
+        table-layout: fixed;
+      }
+
+      table.table-headerfixed thead,
+      table.table-headerfixed tbody,
+      table.table-headerfixed tr,
+      table.table-headerfixed td,
+      table.table-headerfixed th {
+          display: block;
+      }
+
+      table.table-headerfixed tr:after {
+          content: ' ';
+          display: block;
+          visibility: hidden;
+          clear: both;
+      }
+
+      table.table-headerfixed tbody {
+          height: 280px;
+          overflow-y: scroll;
+      }
+
+      table.table-headerfixed thead {
+          /* fallback */
+          width: 97%;
+          /* minus scroll bar width */
+          width: calc(100% - 17px);
+      }
+
+      table.table-headerfixed tbody td,
+      table.table-headerfixed thead th {
+          float: left;
+          height: 40px;
+      }
+
+      table.table-headerfixed tbody td {
+          height: 30px;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+      }
+
+  </style>
+
+    <!--[if lt IE 9]>
+      <script src="//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="//oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  </head>
+
+  <body class="no-thank-yu">
+    <header>
+      <nav class="navbar navbar-dark bg-primary navbar-fixed-top">
+        <div class="container">
+        	<button class="navbar-toggler hidden-sm-up float-xs-right" type="button" data-toggle="collapse" data-target="#navbar-header" aria-controls="navbar-header" aria-expanded="false" aria-label="Toggle navigation"></button>
+    			<div class="clearfix hidden-sm-up"></div> <!-- fix navbar responsive bug -->
+          <div class="collapse navbar-toggleable-xs" id="navbar-header">
+            <ul class="nav navbar-nav">
+              <li class="nav-item active">
+                <a href="/products/top" class="nav-link">Top</a>
+              </li>
+              <li class="nav-item">
+                <a href="/products/search" class="nav-link">Search</a>
+              </li>
+              <li class="nav-item">
+                <a href="/products/upload" class="nav-link">Upload</a>
+              </li>
+              <li class="nav-item">
+                <a href="/products/setup" class="nav-link">Setup</a>
+              </li>
+              <li class="nav-item">
+                <a href="/users/sign_out" class="nav-link">Log-out</a>
+              </li>
+              <% if @login_user != nil then %>
+              <% if @login_user.admin_flg == true then %>
+              <li class="nav-item">
+                <a href="/admin" class="nav-link">Admin</a>
+              </li>
+              <% end %>
+              <li class="nav-item">
+                <small class="nav-link text-muted">ログイン中：<%= @login_user.email  %></small>
+              </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <div class="container">
+      <%= yield %>
+    </div>
+
+  </body>
+</html>

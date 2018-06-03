@@ -1,0 +1,13 @@
+function entryChange1(){
+		radio = document.getElementById('search_condition_from_url')
+		if(radio.checked) {
+			document.getElementById('url_form').style.display = "";
+      document.getElementById('asin_form').style.display = "none";
+		}else{
+      document.getElementById('url_form').style.display = "none";
+      document.getElementById('asin_form').style.display = "";
+		}
+	}
+
+	//オンロードさせ、リロード時に選択を保持
+	window.onload = entryChange1;

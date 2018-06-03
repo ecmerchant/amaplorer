@@ -1,0 +1,31 @@
+<div class="page-header" id="banner">
+  <div class="row">
+    <div class="col-lg-10 col-md-8">
+      <h2>アマプローラー Amaplorer <small>~眠れる激熱アイテム発掘ツール~</small></h2>
+      <p class="lead">アマゾンとヤフーショッピング間の商品リサーチ＆出品システム</p>
+      <h3>実行状況</h3>
+      <table class="table table-striped table-hover table-bordered table-headerfixed ellipsis">
+        <thead class="thead-inverse">
+          <tr>
+            <th width="15%">ASIN</th>
+            <th width="30%">商品名</th>
+            <th width="20%">アマゾン価格</th>
+            <th width="20%">Yショッピング価格</th>
+            <th width="15%">ユニークID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for temp in @products %>
+          <tr>
+            <td width="15%"><%= temp.asin %></td>
+            <td width="30%"><%= temp.title %></td>
+            <td width="20%"><%= temp.lowest_price %></td>
+            <td width="20%"><%= temp.yahoo_price %></td>
+            <td width="15%"><%= temp.unique_id %></td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

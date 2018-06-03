@@ -72,3 +72,15 @@ gem 'jquery-turbolinks'
 gem 'redis'
 gem 'resque'
 gem 'daemons'
+gem 'resque-scheduler'
+
+# gem for background processing
+gem 'delayed_job_active_record'
+gem 'typhoeus'
+
+# gem for Amazon
+gem 'peddler'
+gem 'amazon-ecs'
+
+# gem for retry
+gem 'retryable'

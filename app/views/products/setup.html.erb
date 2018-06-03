@@ -1,0 +1,34 @@
+<div class="page-header" id="banner">
+  <div class="row">
+    <div class="col-lg-8 col-md-10">
+      <h2>ツールの設定</h2>
+      <div class="col-lg-6">
+        <%= form_for(@account, {url: products_setup_path, method: 'post'}) do |f| %>
+          <p class="lead">MWSアカウントの設定</p>
+          <div class="form-group">
+            <%= f.label :seller_id, "セラーID" %>
+            <%= f.text_field :seller_id, class: 'form-control' %>
+          </div>
+          <div class="form-group">
+            <%= f.label :mws_auth_token, "MWS認証トークン" %>
+            <%= f.text_field :mws_auth_token, class: 'form-control'  %>
+          </div>
+
+          <br>
+          <p class="lead">チャットワーク連携設定</p>
+          <div class="form-group">
+            <%= f.label :cw_api_token, "APIトークン" %>
+            <%= f.text_field :cw_api_token, class: 'form-control' %>
+          </div>
+          <div class="form-group">
+            <%= f.label :cw_room_id, "ルームID" %>
+            <%= f.text_field :cw_room_id, class: 'form-control'  %>
+          </div>
+          <div class="actions">
+            <%= f.submit "設定する", {id: "setup_btn", onClick: 'alert("更新しました")'} %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

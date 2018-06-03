@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180429093200) do
+ActiveRecord::Schema.define(version: 20180602170800) do
+
+  create_table "accounts", force: :cascade do |t|
+    t.string   "user"
+    t.string   "seller_id"
+    t.string   "mws_auth_token"
+    t.datetime "created_at",     null: false
+    t.datetime "updated_at",     null: false
+    t.string   "user_level"
+    t.string   "cw_api_token"
+    t.string   "cw_room_id"
+    t.string   "unique_id"
+  end
 
   create_table "products", force: :cascade do |t|
     t.string   "asin"
@@ -36,6 +48,10 @@ ActiveRecord::Schema.define(version: 20180429093200) do
     t.string   "yahoo_image"
     t.datetime "created_at",      null: false
     t.datetime "updated_at",      null: false
+    t.string   "user"
+    t.string   "unique_id"
+    t.boolean  "listing"
+    t.string   "yahoo_title"
   end
 
   create_table "users", force: :cascade do |t|
@@ -51,6 +67,7 @@ ActiveRecord::Schema.define(version: 20180429093200) do
     t.string   "last_sign_in_ip"
     t.datetime "created_at",                          null: false
     t.datetime "updated_at",                          null: false
+    t.boolean  "admin_flg"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
