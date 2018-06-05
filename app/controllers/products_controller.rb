@@ -15,9 +15,10 @@ class ProductsController < ApplicationController
 
   def search
     @login_user = current_user
+    uid = Account.find_by(user: current_user.email).unique_id
+    @products = Product.where(user: current_user.email, unique_id: uid)
     if request.post? then
       #ASINの入力方法
-
       condition = params[:search][:condition]
       charset = "UTF-8"
       i = 1
@@ -65,7 +66,7 @@ class ProductsController < ApplicationController
           i += 1
         end
 
-      elsif condition = 'from_asin' then
+      elsif condition == 'from_asin' then
         #ASINの入力方法:ファイルからの場合
         logger.debug('条件：ASIN')
         data = params[:file]
@@ -84,7 +85,9 @@ class ProductsController < ApplicationController
       tu = Account.find_by(user: current_user.email)
       tu.update(unique_id: uid)
 
+      GetItemDataJob.perform_later(current_user.email, uid)
     end
+
   end
 
   def top
@@ -94,9 +97,6 @@ class ProductsController < ApplicationController
 
   def upload
     @login_user = current_user
-    a = Product.new
-    #a.amazon(current_user.email, '20180512180556')
-    a.yahoo_shopping(current_user.email, '20180512180556')
   end
 
   def setup

@@ -6,6 +6,7 @@ class Product < ApplicationRecord
   require 'uri'
 
   def amazon(user, uid)
+    logger.debug("\n====START AMAZON DATA=======")
     #PAAPIにアクセス
     Amazon::Ecs.configure do |options|
       options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
@@ -14,108 +15,157 @@ class Product < ApplicationRecord
     end
 
     target = Product.where(user:user, unique_id:uid)
-    asins = target.pluck(:asin)
-    logger.debug(asins)
-    res = nil
-    Retryable.retryable(tries: 5, sleep: 1.5) do
-      res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
-      logger.debug(res.error)
-    end
-    counter = 0
-    res.items.each do |item|
-      asin = item.get('ASIN')
-      title = item.get('ItemAttributes/Title')
-      jan = item.get('ItemAttributes/EAN')
-      mpn = item.get('ItemAttributes/MPN')
-      image = item.get('LargeImage/URL')
+    orgasins = target.pluck(:asin)
 
-      temp = target.find_by(asin: asin)
-      temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
-      counter += 1
-    end
-
-    #MWSにアクセス
-    mp = "A1VC38T7YXB528"
-    temp = Account.find_by(user: user)
-    sid = temp.seller_id
-    auth = temp.mws_auth_token
-    client = MWS.products(
-      primary_marketplace_id: mp,
-      merchant_id: sid,
-      auth_token: auth,
-      aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-      aws_secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
-    )
-    response = client.get_competitive_pricing_for_asin(asins)
-    parser = response.parse
-
-    parser.each do |product|
-      asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
-      cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
-      cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
-      cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
-      if cartprice == nil then
-        cartprice = 0
+    orgasins.each_slice(10) do |arr|
+      logger.debug("\n======START=========")
+      asins = arr
+      logger.debug("\n\n")
+      logger.debug(asins)
+      logger.debug("\n\n")
+      res = nil
+      Retryable.retryable(tries: 5, sleep: 1.5) do
+        res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
+        logger.debug(res.error)
       end
-      if cartship == nil then
-        cartship = 0
+      counter = 0
+      res.items.each do |item|
+        asin = item.get('ASIN')
+        title = item.get('ItemAttributes/Title')
+        jan = item.get('ItemAttributes/EAN')
+        mpn = item.get('ItemAttributes/MPN')
+        image = item.get('LargeImage/URL')
+
+        temp = target.find_by(asin: asin)
+        temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
+        counter += 1
       end
-      if cartpoint == nil then
-        cartpoint = 0
-      end
-      salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
-      if salesrank != nil then
-        category = salesrank.last.dig('ProductCategoryId')
-        rank = salesrank.last.dig('Rank')
-      else
-        category = nil
-        rank = nil
-      end
-      temp = target.find_by(asin: asin)
-      temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
-    end
 
-    response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
-    parser = response.parse
+      #MWSにアクセス
+      mp = "A1VC38T7YXB528"
+      temp = Account.find_by(user: user)
+      sid = temp.seller_id
+      auth = temp.mws_auth_token
+      client = MWS.products(
+        primary_marketplace_id: mp,
+        merchant_id: sid,
+        auth_token: auth,
+        aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+      )
+      response = client.get_competitive_pricing_for_asin(asins)
+      parser = response.parse
 
-    parser.each do |product|
-
-      asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
-      buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
-
-      if buf != nil then
-        logger.debug(buf.length)
-        if buf.length == 5 then
-          lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 'Price', 'ListingPrice','Amount')
-          lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 'Price', 'Shipping','Amount')
-          lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 'Price', 'Points','PointsNumber')
-          if lowestpoint == nil then
-            lowestpoint = 0
-          end
+      parser.each do |product|
+        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+        cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
+        cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
+        cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
+        if cartprice == nil then
+          cartprice = 0
+        end
+        if cartship == nil then
+          cartship = 0
+        end
+        if cartpoint == nil then
+          cartpoint = 0
+        end
+        salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
+        if salesrank != nil then
+          category = salesrank.last.dig('ProductCategoryId')
+          rank = salesrank.last.dig('Rank')
         else
+          category = nil
+          rank = nil
+        end
+        temp = target.find_by(asin: asin)
+        temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
+      end
+
+      response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
+      parser = response.parse
+
+      parser.each do |product|
+        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+        buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
+        lowestprice = 0
+        lowestship = 0
+        lowestpoint = 0
+        if buf != nil then
+          logger.debug(buf.length)
           lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
           lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
           lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
           if lowestpoint == nil then
             lowestpoint = 0
           end
+          if lowestship == nil then
+            lowestship = 0
+          end
+          if lowestprice == nil then
+            lowestprice = 0
+          end
+        else
+          lowestprice = 0
+          lowestship = 0
+          lowestpoint = 0
         end
-      else
-        lowestprice = 0
-        lowestship = 0
-        lowestpoint = 0
+        temp = target.find_by(asin: asin)
+        temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
-      logger.debug(asin)
-      logger.debug(lowestprice)
-      logger.debug(lowestship)
-      logger.debug(lowestpoint)
 
-      temp = target.find_by(asin: asin)
-      temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+      requests = []
+      i = 0
+
+      asins.each do |asin|
+        prices = {
+          ListingPrice: { Amount: 1000, CurrencyCode: "JPY", }
+        }
+        request = {
+          MarketplaceId: "A1VC38T7YXB528",
+          IdType: "ASIN",
+          IdValue: asin,
+          PriceToEstimateFees: prices,
+          Identifier: "req" + i.to_s,
+          IsAmazonFulfilled: false
+        }
+        requests[i] = request
+        i += 1
+      end
+
+      response = client.get_my_fees_estimate(requests)
+      parser = response.parse
+
+      doc2 = Nokogiri::XML(response.body)
+      doc2.remove_namespaces!
+
+      asins.each do |asin|
+        fee = 0
+        temp2 = doc2.xpath("//FeesEstimateResult")
+        for tt in temp2
+          casin = tt.xpath("FeesEstimateIdentifier/IdValue")[0].text
+          if casin == asin then
+            tfee = tt.xpath("FeesEstimate/FeeDetailList/FeeDetail/FeeAmount/Amount")[0]
+            if tfee != nil then
+              fee = tfee.text
+              break
+            end
+          end
+        end
+        logger.debug("\n======FEE=========")
+        logger.debug(fee)
+        fee = fee.to_f / 1000
+        logger.debug(fee)
+        temp = target.find_by(asin: asin)
+        temp.update(amazon_fee: fee)
+      end
+      logger.debug("\n======END=========")
     end
+    logger.debug("\n====END AMAZON DATA=======")
   end
 
   def yahoo_shopping(user, uid)
+    logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.pluck(:asin, :title, :jan, :mpn)
     #logger.debug(data)
@@ -156,8 +206,12 @@ class Product < ApplicationRecord
 
           yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0].inner_text
           yahoo_price = yahoo_price.gsub("," , "")
-          yahoo_shipping = doc2.xpath('//p[@class="elCost"]/em')[0].inner_text
 
+          if yahoo_price == nil then
+            yahoo_price = 0
+          end
+
+          yahoo_shipping = doc2.xpath('//p[@class="elCost"]/em')[0].inner_text
           if yahoo_shipping == "送料無料" then
             yahoo_shipping = 0
           else
@@ -190,12 +244,6 @@ class Product < ApplicationRecord
           end
 
           isvalid = true
-
-          logger.debug(yahoo_title)
-          logger.debug(normal_point)
-          logger.debug(premium_point)
-          logger.debug(softbank_point)
-
           temp = target.find_by(asin: asin)
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point)
         else
@@ -208,6 +256,7 @@ class Product < ApplicationRecord
         logger.debug(e)
       end
     end
+    logger.debug("\n====END YAHOO DATA=======")
   end
 
 end

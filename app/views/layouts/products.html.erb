@@ -12,9 +12,10 @@
 
     <%= stylesheet_link_tag    'bootstrap.min', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_include_tag 'bootstrap.min', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'jquery.tablesorter.min', 'data-turbolinks-track': 'reload' %>
 
     <style type="text/css">
-      body { padding-top: 80px; }
+      body { padding-top: 60px; }
 
       @media ( min-width: 768px ) {
         #banner {
@@ -89,10 +90,13 @@
       table.table-headerfixed thead th {
           float: left;
           height: 40px;
+          display: table-cell;
+          text-align: center;
+          vertical-align: middle;
       }
 
       table.table-headerfixed tbody td {
-          height: 30px;
+          height: 100px;
           overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;

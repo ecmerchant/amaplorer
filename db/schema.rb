@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180602170800) do
+ActiveRecord::Schema.define(version: 20180604160210) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -52,6 +52,7 @@ ActiveRecord::Schema.define(version: 20180602170800) do
     t.string   "unique_id"
     t.boolean  "listing"
     t.string   "yahoo_title"
+    t.float    "amazon_fee"
   end
 
   create_table "users", force: :cascade do |t|
