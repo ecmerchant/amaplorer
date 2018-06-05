@@ -45,6 +45,7 @@
             <th width="5%">出品<br>制限</th>
           </tr>
         </thead>
+        <% if @products != nil then %>
         <tbody style="font-size: 9pt;">
           <% for temp in @products %>
           <% points = (temp.normal_point.to_f + temp.premium_point.to_f + temp.softbank_point.to_f) %>
@@ -70,6 +71,7 @@
           </tr>
           <% end %>
         </tbody>
+        <% end %>
       </table>
     </div>
   </div>

@@ -19,7 +19,7 @@ class ProductsController < ApplicationController
       uid = Account.find_by(user: current_user.email).unique_id
       @products = Product.where(user: current_user.email, unique_id: uid)
     else
-      @products = Product.new
+      @products = nil
     end
     if request.post? then
       #ASINの入力方法
