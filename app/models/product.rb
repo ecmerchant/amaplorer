@@ -53,6 +53,8 @@ class Product < ApplicationRecord
         aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
         aws_secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
       )
+
+      logger.debug("get cart data")
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
 

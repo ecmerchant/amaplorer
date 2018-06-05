@@ -101,6 +101,11 @@ class ProductsController < ApplicationController
 
   def upload
     @login_user = current_user
+    #if Account.find_by(user: current_user.email) != nil then
+    #  uid = Account.find_by(user: current_user.email).unique_id
+    #  a = Product.new
+    #  a.amazon(current_user.email, uid)
+    #end
   end
 
   def setup

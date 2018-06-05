@@ -49,8 +49,8 @@
         <tbody style="font-size: 9pt;">
           <% for temp in @products %>
           <% points = (temp.normal_point.to_f + temp.premium_point.to_f + temp.softbank_point.to_f) %>
-          <% if temp.cart_price != 0 then aprice = temp.cart_price.to_f + temp.cart_shipping.to_f else aprice = temp.lowest_price.to_f + temp.lowest_ship.to_f end %>
-          <% profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i %>
+          <% if temp.cart_price != 0 then aprice = temp.cart_price.to_f + temp.cart_shipping.to_f else aprice = temp.lowest_price.to_f + temp.lowest_shipping.to_f end %>
+          <% if (temp.yahoo_price.to_f - points) != 0 then profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i else profit = 0 end %>
           <tr>
             <td width="4%" style="text-align:center;"><input type="checkbox" name="chk_1" value="1" id="<%= temp.asin %>" style="margin-top: 30px;" /></td>
             <td width="9%"><br><br><%= temp.asin %></td>
@@ -65,7 +65,7 @@
             <% else %>
               <td width="8%" style="text-align:center;" class="warning"><br><br><b><%= profit %></b></td>
             <% end  %>
-            <td width="6%" style="text-align:center;"><br><br><% if profit != 0 then %><%= (((aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)) / (temp.yahoo_price.to_f - points))*100).round(1) %><% else %>0<% end %></td>
+            <td width="6%" style="text-align:center;"><br><br><% if profit != 0 && (temp.yahoo_price.to_f - points) != 0 then %><%= (((aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)) / (temp.yahoo_price.to_f - points))*100).round(1) %><% else %>0<% end %></td>
             <td width="5%"><br><a href="https://mnrate.com/item/aid/<%= temp.asin %>" target="_blank"><%= image_tag('mnrate.png', :height => "30pt") %></a></td>
             <td width="5%"><br><a href="https://sellercentral.amazon.co.jp/productsearch?q=<%= temp.asin %>" target="_blank"><%= image_tag('amazon.png', :height => "30pt") %></a></td>
           </tr>
