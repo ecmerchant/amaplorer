@@ -15,8 +15,12 @@ class ProductsController < ApplicationController
 
   def search
     @login_user = current_user
-    uid = Account.find_by(user: current_user.email).unique_id
-    @products = Product.where(user: current_user.email, unique_id: uid)
+    if Account.find_by(user: current_user.email) != nil then
+      uid = Account.find_by(user: current_user.email).unique_id
+      @products = Product.where(user: current_user.email, unique_id: uid)
+    else
+      @products = Product.new
+    end
     if request.post? then
       #ASINの入力方法
       condition = params[:search][:condition]
