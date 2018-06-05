@@ -49,7 +49,7 @@
         <tbody style="font-size: 9pt;">
           <% for temp in @products %>
           <% points = (temp.normal_point.to_f + temp.premium_point.to_f + temp.softbank_point.to_f) %>
-          <% if temp.cart_price != 0 then aprice = temp.cart_price else aprice = temp.lowest_price end %>
+          <% if temp.cart_price != 0 then aprice = temp.cart_price.to_f + temp.cart_shipping.to_f else aprice = temp.lowest_price.to_f + temp.lowest_ship.to_f end %>
           <% profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i %>
           <tr>
             <td width="4%" style="text-align:center;"><input type="checkbox" name="chk_1" value="1" id="<%= temp.asin %>" style="margin-top: 30px;" /></td>
