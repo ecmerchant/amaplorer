@@ -15,6 +15,30 @@
           </div>
 
           <br>
+          <p class="lead">ヤフーショッピング設定</p>
+          <div class="form_group">
+            <label class="checkbox-inline">
+              <%= f.check_box :premium, class: 'checkbox' %>プレミアム会員
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="checkbox-inline">
+              <%= f.check_box :softbank, class: 'checkbox' %>ソフトバンクユーザー
+            </label>
+          </div>
+
+          <br>
+          <p class="lead">出品CSV設定</p>
+          <div class="form-group">
+            <%= f.label :condition_note, "コンディション説明" %>
+            <%= f.text_field :condition_note, class: 'form-control' %>
+          </div>
+          <div class="form-group">
+            <%= f.label :lead_time, "リードタイム" %>
+            <%= f.text_field :lead_time, class: 'form-control'  %>
+          </div>
+
+          <br>
           <p class="lead">チャットワーク連携設定</p>
           <div class="form-group">
             <%= f.label :cw_api_token, "APIトークン" %>

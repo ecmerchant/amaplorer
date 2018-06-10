@@ -185,7 +185,7 @@ class Product < ApplicationRecord
           query = title
         end
       end
-      turl = 'https://shopping.yahoo.co.jp/search?p=' + query.to_s
+      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s
       url = URI.escape(turl)
       logger.debug(url)
       charset = nil

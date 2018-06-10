@@ -6,6 +6,7 @@ class ProductsController < ApplicationController
   require 'peddler'
   require 'typhoeus'
   require "date"
+  require 'kconv'
 
   before_action :authenticate_user!
 
@@ -15,10 +16,12 @@ class ProductsController < ApplicationController
 
   def search
     @login_user = current_user
-    if Account.find_by(user: current_user.email) != nil then
+    @account = Account.find_by(user: current_user.email)
+    if @account != nil then
       uid = Account.find_by(user: current_user.email).unique_id
       @products = Product.where(user: current_user.email, unique_id: uid)
     else
+      @account = Account.new
       @products = nil
     end
     if request.post? then
@@ -90,22 +93,77 @@ class ProductsController < ApplicationController
       tu.update(unique_id: uid)
 
       GetItemDataJob.perform_later(current_user.email, uid)
+      redirect_to products_search_path
     end
 
   end
 
   def top
     @login_user = current_user
-    @products = Product.where(user: current_user.email)
+    @account = Account.find_by(user: current_user.email)
+    temp = Product.where(listing: true)
+    @products = temp.order("RANDOM()").limit(5)
   end
 
-  def upload
+  def output
     @login_user = current_user
-    #if Account.find_by(user: current_user.email) != nil then
-    #  uid = Account.find_by(user: current_user.email).unique_id
-    #  a = Product.new
-    #  a.amazon(current_user.email, uid)
-    #end
+    data = params[:chk]
+
+    if data != nil then
+      logger.debug(data)
+      stream = ""
+      account = Account.find_by(user: current_user.email)
+      File.open('app/others/Flat.File.Listingloader.jp.txt') do |file|
+        file.each_line do |row|
+          stream = stream + row
+        end
+      end
+
+      products = Product.where(user: current_user.email)
+      stream = stream.tosjis
+      data.each do |key, value|
+        temp = products.find_by(asin: key)
+        temp.update(listing: true)
+        logger.debug(stream.encoding)
+
+        for p in 0..27
+          case p
+            when 0 then
+              stream = stream + temp.yahoo_code + "\t"
+            when 1 then
+              if temp.cart_price != 0 then
+                aprice = temp.cart_price.to_f + temp.cart_shipping.to_f
+              else
+                aprice = temp.lowest_price.to_f + temp.lowest_shipping.to_f
+              end
+              stream = stream + aprice.to_i.to_s + "\t"
+            when 3 then
+              stream = stream + "1" + "\t"
+            when 4 then
+              stream = stream + key + "\t"
+            when 5 then
+              stream = stream + "ASIN" + "\t"
+            when 6 then
+              stream = stream + "New" + "\t"
+            when 7 then
+              stream = stream + account.condition_note.to_s.tosjis + "\t"
+            when 14 then
+              stream = stream + account.lead_time.to_s.tosjis + "\t"
+            when 27 then
+              stream = stream + "" + "\n"
+            else
+              stream = stream + "" + "\t"
+          end
+        end
+      end
+      logger.debug(stream)
+      t = Time.now
+      strTime = t.strftime("%Y%m%D%H%M%S")
+      fname = "出品CSV_" + strTime + ".csv"
+      send_data(stream, filename: fname)
+    else
+      redirect_to products_search_path
+    end
   end
 
   def setup
@@ -118,7 +176,7 @@ class ProductsController < ApplicationController
 
   private
   def user_params
-     params.require(:account).permit(:user, :seller_id, :mws_auth_token, :cw_api_token, :cw_room_id)
+     params.require(:account).permit(:user, :seller_id, :mws_auth_token, :cw_api_token, :cw_room_id, :condition_note, :lead_time, :softbank, :premium)
   end
 
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180604160210) do
+ActiveRecord::Schema.define(version: 20180610043510) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -22,6 +22,11 @@ ActiveRecord::Schema.define(version: 20180604160210) do
     t.string   "cw_api_token"
     t.string   "cw_room_id"
     t.string   "unique_id"
+    t.boolean  "premium"
+    t.boolean  "softbank"
+    t.string   "condition_note"
+    t.string   "lead_time"
+    t.float    "amazon_point"
   end
 
   create_table "products", force: :cascade do |t|
