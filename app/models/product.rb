@@ -30,12 +30,17 @@ class Product < ApplicationRecord
       end
       counter = 0
       res.items.each do |item|
+        logger.debug(counter)
         asin = item.get('ASIN')
+        logger.debug(asin)
         title = item.get('ItemAttributes/Title')
+        logger.debug(title)
         jan = item.get('ItemAttributes/EAN')
+        logger.debug(jan)
         mpn = item.get('ItemAttributes/MPN')
+        logger.debug(mpn)
         image = item.get('LargeImage/URL')
-
+        logger.debug(image)
         temp = target.find_by(asin: asin)
         temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
         counter += 1
@@ -170,12 +175,14 @@ class Product < ApplicationRecord
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.pluck(:asin, :title, :jan, :mpn)
-    #logger.debug(data)
+    logger.debug(data)
     for var in data do
+
       asin = var[0]
       title = var[1]
       jan = var[2]
       mpn = var[3]
+      logger.debug(asin)
 
       query = jan
       if query == nil then
@@ -189,14 +196,23 @@ class Product < ApplicationRecord
       url = URI.escape(turl)
       logger.debug(url)
       charset = nil
+
+      ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
+      uanum = ua.length
+      user_agent = ua[rand(uanum)][0]
+
+      sleep(0.5)
+
       begin
-        request = Typhoeus::Request.new(url)
+        request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         request.run
         html = request.response.body
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
+        
         if temp != nil then
+
           page = temp.xpath('.//a').attribute("href").text
           yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
           yahoo_code = yahoo_code.gsub("/","_")
