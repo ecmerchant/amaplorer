@@ -1,7 +1,17 @@
 class LoadAsinJob < ApplicationJob
   queue_as :default
+  require 'nokogiri'
+  require 'open-uri'
+
+  rescue_from(StandardError) do |exception|
+   # Do something with the exception
+    logger.error exception
+  end
 
   def perform(user, arg1, arg2, arg3, limitnum)
+
+    logger.debug('======= GET ASIN =========')
+
     condition = arg1
     charset = "UTF-8"
     i = 1
@@ -26,13 +36,27 @@ class LoadAsinJob < ApplicationJob
           ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
           uanum = ua.length
           user_agent = ua[rand(uanum)][0]
-          logger.debug("user_agent" + user_agent)
+          #logger.debug("user_agent" + user_agent)
           sleep(0.5)
-          request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
-          request.run
-          html = request.response.body
+          #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
+          #request.run
+          #html = request.response.body
+          #doc = Nokogiri::HTML.parse(html, nil, charset)
 
-          doc = Nokogiri::HTML.parse(html, nil, charset)
+          begin
+            html = open(url, "User-Agent" => user_agent) do |f|
+              charset = f.charset
+              f.read # htmlを読み込んで変数htmlに渡す
+            end
+          rescue OpenURI::HTTPError => error
+            response = error.io
+            logger.debug("\nNo." + pgnum.to_s + "\n")
+            logger.debug("error!!\n")
+            logger.debug(error)
+          end
+
+          doc = Nokogiri::HTML.parse(html, nil)
+
           asins = doc.css('li/@data-asin')
 
           #終了条件1：検索結果がヒットしない
@@ -102,6 +126,7 @@ class LoadAsinJob < ApplicationJob
       logger.debug(asin)
     end
 
+    logger.debug('======= GET ASIN END =========')
 
     a = Product.new
     a.amazon(user, uid)
