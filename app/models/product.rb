@@ -79,8 +79,13 @@ class Product < ApplicationRecord
         end
         salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
         if salesrank != nil then
-          category = salesrank.last.dig('ProductCategoryId')
-          rank = salesrank.last.dig('Rank')
+          if salesrank.class == Array then
+            category = salesrank.last.dig('ProductCategoryId')
+            rank = salesrank.last.dig('Rank')
+          else
+            category = salesrank.dig('ProductCategoryId')
+            rank = salesrank.dig('Rank') 
+          end
         else
           category = nil
           rank = nil
@@ -210,7 +215,7 @@ class Product < ApplicationRecord
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
-        
+
         if temp != nil then
 
           page = temp.xpath('.//a').attribute("href").text

@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   post 'products/output'
 
+
   get 'products/setup'
   post 'products/setup'
 
