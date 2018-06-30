@@ -17,12 +17,12 @@
             </label>
           </div>
           <div class="form-inline" id="url_form">
-            <%= submit_tag '開始', class:'btn btn-primary' %>&nbsp;&nbsp;&nbsp;
+            <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
             <%= label_tag 'search[url]', 'URL:', class:'form-label' %>
             <%= text_field_tag 'search[url]','', class:'form-control' %>
           </div>
           <div class="form-inline" id="asin_form" style="display: none;">
-            <%= submit_tag '開始', class:'btn btn-primary' %>&nbsp;&nbsp;&nbsp;
+            <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
             <div class="form-group" style="width: 320px">
               <%= file_field_tag :file %>
             </div>
@@ -30,6 +30,7 @@
         </div>
       <% end %>
       </div>
+
       <%= form_tag('/products/output', method:'post', multipart: true) do %>
         <div class="col-lg-7">
           <div class="form-group">
@@ -39,6 +40,21 @@
             <%= submit_tag '出品CSV作成', class:'btn btn-primary', onclick:'setTimeout("window.location.reload()",1000*3);' %>&nbsp;&nbsp;&nbsp;
           </div>
         </div>
+        <table class="table table-hover table-bordered" style="text-align:center;font-size:9pt;">
+          <thead>
+          </thead>
+          <tbody>
+            <tr>
+              <td class=""><b>処理状況</b></td>
+              <td class="warning"><b>ASIN取得</b></td>
+              <td><%= @account.asin_status %></td>
+              <td class="warning"><b>アマゾン取得</b></td>
+              <td><%= @account.amazon_status %></td>
+              <td class="warning"><b>ヤフショ取得</b></td>
+              <td><%= @account.yahoo_status %></td>
+            </tr>
+          </tbody>
+        </table>
         <table class="table table-striped table-hover table-bordered table-headerfixed ellipsis tablesorter" id="result_table">
           <thead class="thead-inverse" style="font-size: 9pt;">
             <tr>

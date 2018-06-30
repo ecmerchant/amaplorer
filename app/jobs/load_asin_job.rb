@@ -16,6 +16,9 @@ class LoadAsinJob < ApplicationJob
     charset = "UTF-8"
     i = 1
     account = Account.find_by(user: user)
+    account.update(asin_status: "実行中", amazon_status: "準備中", yahoo_status: "準備中")
+    ecounter = 0
+
     ulevel = account.user_level
     counter = 0
     d = DateTime.now
@@ -73,9 +76,11 @@ class LoadAsinJob < ApplicationJob
           end
 
           asins.each do |temp_asin|
+            ecounter += 1
             asin.push(temp_asin)
             tag = temp_asin.to_s
             logger.debug(tag)
+            account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
             temp = Product.find_or_create_by(user:user, asin:tag)
             temp.update(unique_id: uid)
             if ulevel == "trial" then
@@ -116,6 +121,7 @@ class LoadAsinJob < ApplicationJob
         logger.debug(tag)
         temp = Product.find_or_create_by(user:user, asin:tag)
         temp.update(unique_id: uid)
+        account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
         if ulevel == "trial" then
           counter += 1
           if counter > limitnum then
@@ -127,7 +133,7 @@ class LoadAsinJob < ApplicationJob
     end
 
     logger.debug('======= GET ASIN END =========')
-
+    account.update(asin_status: "完了 " + ecounter.to_s + "件済")
     a = Product.new
     a.amazon(user, uid)
     a.yahoo_shopping(user, uid)

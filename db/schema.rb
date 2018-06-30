@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180610043510) do
+ActiveRecord::Schema.define(version: 20180630060513) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -27,6 +27,9 @@ ActiveRecord::Schema.define(version: 20180610043510) do
     t.string   "condition_note"
     t.string   "lead_time"
     t.float    "amazon_point"
+    t.string   "asin_status"
+    t.string   "amazon_status"
+    t.string   "yahoo_status"
   end
 
   create_table "products", force: :cascade do |t|

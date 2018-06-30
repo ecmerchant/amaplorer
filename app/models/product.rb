@@ -8,6 +8,10 @@ class Product < ApplicationRecord
   def amazon(user, uid)
     logger.debug("\n====START AMAZON DATA=======")
     #PAAPIにアクセス
+    account = Account.find_by(user: user)
+    account.update(yahoo_status: "準備中")
+    ecounter = 0
+
     Amazon::Ecs.configure do |options|
       options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
       options[:AWS_secret_key] = ENV['PA_AWS_SECRET_KEY_ID']
@@ -48,9 +52,8 @@ class Product < ApplicationRecord
 
       #MWSにアクセス
       mp = "A1VC38T7YXB528"
-      temp = Account.find_by(user: user)
-      sid = temp.seller_id
-      auth = temp.mws_auth_token
+      sid = account.seller_id
+      auth = account.mws_auth_token
       client = MWS.products(
         primary_marketplace_id: mp,
         merchant_id: sid,
@@ -84,7 +87,7 @@ class Product < ApplicationRecord
             rank = salesrank.last.dig('Rank')
           else
             category = salesrank.dig('ProductCategoryId')
-            rank = salesrank.dig('Rank') 
+            rank = salesrank.dig('Rank')
           end
         else
           category = nil
@@ -123,6 +126,7 @@ class Product < ApplicationRecord
           lowestpoint = 0
         end
         temp = target.find_by(asin: asin)
+        ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
 
@@ -171,8 +175,10 @@ class Product < ApplicationRecord
         temp = target.find_by(asin: asin)
         temp.update(amazon_fee: fee)
       end
+      account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
       logger.debug("\n======END=========")
     end
+    account.update(amazon_status: "完了 " + ecounter.to_s + "件済")
     logger.debug("\n====END AMAZON DATA=======")
   end
 
@@ -180,7 +186,11 @@ class Product < ApplicationRecord
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.pluck(:asin, :title, :jan, :mpn)
+    account = Account.find_by(user: user)
+    account.update(yahoo_status: "実行中")
+
     logger.debug(data)
+    counter = 0
     for var in data do
 
       asin = var[0]
@@ -278,8 +288,10 @@ class Product < ApplicationRecord
         logger.debug("Error!!\n")
         logger.debug(e)
       end
+      counter += 1
+      account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
     end
     logger.debug("\n====END YAHOO DATA=======")
+    account.update(asin_status: "完了", amazon_status: "完了", yahoo_status: "完了")
   end
-
 end
