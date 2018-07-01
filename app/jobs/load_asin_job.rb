@@ -120,6 +120,7 @@ class LoadAsinJob < ApplicationJob
         tag = tasin.to_s
         logger.debug(tag)
         temp = Product.find_or_create_by(user:user, asin:tag)
+        ecounter += 1
         temp.update(unique_id: uid)
         account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
         if ulevel == "trial" then

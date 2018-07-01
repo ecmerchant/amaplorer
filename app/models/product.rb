@@ -28,8 +28,12 @@ class Product < ApplicationRecord
       logger.debug(asins)
       logger.debug("\n\n")
       res = nil
-      Retryable.retryable(tries: 5, sleep: 1.5) do
+      logger.debug("===== PAAPI =======")
+      rcounter = 0
+      Retryable.retryable(tries: 10, sleep: 2.0) do
         res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
+        rcounter += 1
+        sleep(rcounter)
         logger.debug(res.error)
       end
       counter = 0
@@ -45,7 +49,7 @@ class Product < ApplicationRecord
         logger.debug(mpn)
         image = item.get('LargeImage/URL')
         logger.debug(image)
-        temp = target.find_by(asin: asin)
+        temp = target.find_or_create_by(asin: asin)
         temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
         counter += 1
       end
@@ -63,6 +67,7 @@ class Product < ApplicationRecord
       )
 
       logger.debug("get cart data")
+      logger.debug("===== CART PRICE =======")
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
 
@@ -93,10 +98,11 @@ class Product < ApplicationRecord
           category = nil
           rank = nil
         end
-        temp = target.find_by(asin: asin)
+        temp = target.find_or_create_by(asin: asin)
         temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
       end
 
+      logger.debug("===== LOWEST NEW =======")
       response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
       parser = response.parse
 
@@ -125,7 +131,7 @@ class Product < ApplicationRecord
           lowestship = 0
           lowestpoint = 0
         end
-        temp = target.find_by(asin: asin)
+        temp = target.find_or_create_by(asin: asin)(asin: asin)
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
@@ -149,6 +155,7 @@ class Product < ApplicationRecord
         i += 1
       end
 
+      logger.debug("===== FEES ESTIMATE =======")
       response = client.get_my_fees_estimate(requests)
       parser = response.parse
 
@@ -172,7 +179,7 @@ class Product < ApplicationRecord
         logger.debug(fee)
         fee = fee.to_f / 1000
         logger.debug(fee)
-        temp = target.find_by(asin: asin)
+        target.find_or_create_by(asin: asin)
         temp.update(amazon_fee: fee)
       end
       account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
@@ -277,10 +284,10 @@ class Product < ApplicationRecord
           end
 
           isvalid = true
-          temp = target.find_by(asin: asin)
+          temp = target.find_or_create_by(asin: asin)
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point)
         else
-          temp = target.find_by(asin: asin)
+          temp = target.find_or_create_by(asin: asin)
           yahoo_title = "該当なし"
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title)
         end
