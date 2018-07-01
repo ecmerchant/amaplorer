@@ -35,7 +35,7 @@ class ProductsController < ApplicationController
         arg3 = nil
       end
       LoadAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
-      redirect_to products_search_path
+      #redirect_to products_search_path
     end
 
   end

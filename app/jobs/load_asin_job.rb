@@ -19,6 +19,8 @@ class LoadAsinJob < ApplicationJob
     account.update(asin_status: "実行中", amazon_status: "準備中", yahoo_status: "準備中")
     ecounter = 0
 
+    casins = Hash.new
+
     ulevel = account.user_level
     counter = 0
     d = DateTime.now
@@ -76,9 +78,17 @@ class LoadAsinJob < ApplicationJob
           end
 
           asins.each do |temp_asin|
-            ecounter += 1
+
             asin.push(temp_asin)
             tag = temp_asin.to_s
+
+            if casins.key?(tag) then
+
+            else
+              casins[tag] = ecounter
+              ecounter += 1
+            end
+
             logger.debug(tag)
             account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
             temp = Product.find_or_create_by(user:user, asin:tag)
@@ -88,13 +98,6 @@ class LoadAsinJob < ApplicationJob
               if counter > limitnum then
                 break
               end
-            end
-          end
-
-          if ulevel == "trial" then
-            counter += 1
-            if counter > limitnum then
-              break
             end
           end
 

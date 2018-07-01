@@ -47,8 +47,16 @@ class Product < ApplicationRecord
         logger.debug(jan)
         mpn = item.get('ItemAttributes/MPN')
         logger.debug(mpn)
-        image = item.get('LargeImage/URL')
+        image = item.get('SmallImage/URL')
         logger.debug(image)
+        if image == nil || image == "" then
+          logger.debug("image is nothing")
+          image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
+          if image == nil || image == "" then
+            logger.debug("image is nothing 2")
+            image = item.get('ImageSets/ImageSet/SmallImage/URL')
+          end
+        end
         temp = target.find_or_create_by(asin: asin)
         temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
         counter += 1
@@ -261,7 +269,7 @@ class Product < ApplicationRecord
 
           yahoo_title = doc2.xpath('//div[@class="elTitle"]/h2')[0].inner_text
           yahoo_image = doc2.xpath('//div[@class="elMain"]//img').attribute("src").text
-
+          yahoo_image = yahoo_image.gsub("/i/l/","/i/g/")
           normal_point = 0
           premium_point = 0
           softbank_point = 0
@@ -299,6 +307,6 @@ class Product < ApplicationRecord
       account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
     end
     logger.debug("\n====END YAHOO DATA=======")
-    account.update(asin_status: "完了", amazon_status: "完了", yahoo_status: "完了")
+    account.update(yahoo_status: "完了 " + counter.to_s + "件済")
   end
 end
