@@ -179,7 +179,7 @@ class Product < ApplicationRecord
         logger.debug(fee)
         fee = fee.to_f / 1000
         logger.debug(fee)
-        target.find_or_create_by(asin: asin)
+        temp = target.find_or_create_by(asin: asin)
         temp.update(amazon_fee: fee)
       end
       account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
