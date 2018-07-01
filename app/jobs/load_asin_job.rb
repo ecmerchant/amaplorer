@@ -55,7 +55,7 @@ class LoadAsinJob < ApplicationJob
             end
           rescue OpenURI::HTTPError => error
             response = error.io
-            logger.debug("\nNo." + pgnum.to_s + "\n")
+            logger.debug("\nNo." + i.to_s + "\n")
             logger.debug("error!!\n")
             logger.debug(error)
           end
