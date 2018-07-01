@@ -131,7 +131,7 @@ class Product < ApplicationRecord
           lowestship = 0
           lowestpoint = 0
         end
-        temp = target.find_or_create_by(asin: asin)(asin: asin)
+        temp = target.find_or_create_by(asin: asin)
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
