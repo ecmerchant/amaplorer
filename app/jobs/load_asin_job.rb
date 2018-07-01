@@ -41,8 +41,8 @@ class LoadAsinJob < ApplicationJob
           ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
           uanum = ua.length
           user_agent = ua[rand(uanum)][0]
-          #logger.debug("user_agent" + user_agent)
-          sleep(0.5)
+          logger.debug("user_agent" + user_agent)
+          sleep(1.1)
           #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
           #request.run
           #html = request.response.body
