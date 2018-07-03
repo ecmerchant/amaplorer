@@ -138,9 +138,8 @@ class ProductsController < ApplicationController
     if request.post? then
       user = params[:user]
       password = params[:password]
-      admin = params[:admin_user]
       ulevel = params[:ulevel]
-      user = User.find_or_initialize_by(email: user, password: password, admin_user: admin)
+      user = User.find_or_initialize_by(email: user, password: password)
       if user.new_record? # 新規作成の場合は保存
         user.save!
       end
