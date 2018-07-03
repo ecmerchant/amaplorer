@@ -8,7 +8,8 @@ class ProductsController < ApplicationController
   require "date"
   require 'kconv'
 
-  before_action :authenticate_user!
+  before_action :authenticate_user!, :except => [:check, :regist]
+  protect_from_forgery :except => [:check, :regist]
 
   rescue_from CanCan::AccessDenied do |exception|
     redirect_to root_url, :alert => exception.message
@@ -116,9 +117,42 @@ class ProductsController < ApplicationController
     end
   end
 
+  def check
+    if request.post? then
+      user = params[:user]
+      password = params[:password]
+      check = Account.find_by(user: user, password: password)
+      if check != nil then
+        if check.isvalid == true then
+          head 200   # 200を返す
+        else
+          head 304   # 200を返す
+        end
+      else
+        head 304   # 200を返す
+      end
+    end
+  end
+
+  def regist
+    if request.post? then
+      user = params[:user]
+      password = params[:password]
+      admin = params[:admin_user]
+      ulevel = params[:ulevel]
+      user = User.find_or_initialize_by(email: user, password: password, admin_user: admin)
+      if user.new_record? # 新規作成の場合は保存
+        user.save!
+      end
+      user = Account.find_or_create_by(user: user)
+      user.update(user_level: ulevel)
+    end
+  end
+
   private
   def user_params
      params.require(:account).permit(:user, :seller_id, :mws_auth_token, :cw_api_token, :cw_room_id, :condition_note, :lead_time, :softbank, :premium)
+     params.require(:user).permit(:email, :password, :isvalid, :admin_flg)
   end
 
 end

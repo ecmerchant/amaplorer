@@ -231,11 +231,17 @@ class Product < ApplicationRecord
       uanum = ua.length
       user_agent = ua[rand(uanum)][0]
 
-      sleep(0.5)
+      sleep(1.1)
 
       begin
-        request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
-        request.run
+
+        html = open(url, "User-Agent" => user_agent) do |f|
+          charset = f.charset
+          f.read # htmlを読み込んで変数htmlに渡す
+        end
+
+        #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
+        #request.run
         html = request.response.body
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
