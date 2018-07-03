@@ -143,13 +143,12 @@ class ProductsController < ApplicationController
       logger.debug(user)
       logger.debug(password)
       logger.debug(ulevel)
-      user = User.find_or_initialize_by(email: user)
-      if user.new_record? # 新規作成の場合は保存
-        user.save!
-        user.update(password: password)
+      tuser = User.find_or_initialize_by(email: user, password: password)
+      if tuser.new_record? # 新規作成の場合は保存
+        tuser.save!
       end
-      user = Account.find_or_create_by(user: user)
-      user.update(user_level: ulevel)
+      tuser = Account.find_or_create_by(user: user)
+      tuser.update(user_level: ulevel)
       logger.debug("====== Regist from Form End =======")
     end
   end
