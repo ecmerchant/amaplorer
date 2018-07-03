@@ -11,9 +11,9 @@ Rails.application.routes.draw do
 
   post 'products/output'
 
-  post 'accounts/check'
+  post 'products/check'
 
-  post 'accounts/regist'
+  post 'products/regist'
 
   get 'products/setup'
   post 'products/setup'
