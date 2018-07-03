@@ -143,9 +143,9 @@ class ProductsController < ApplicationController
       logger.debug(user)
       logger.debug(password)
       logger.debug(ulevel)
-      tuser = User.find_or_initialize_by(email: user, password: password)
+      tuser = User.find_or_initialize_by(email: user)
       if tuser.new_record? # 新規作成の場合は保存
-        tuser.save!
+        tuser = User.create(email: user, password: password)
       end
       tuser = Account.find_or_create_by(user: user)
       tuser.update(user_level: ulevel)
