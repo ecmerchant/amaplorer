@@ -203,9 +203,19 @@ class Product < ApplicationRecord
     data = target.pluck(:asin, :title, :jan, :mpn, :cart_price)
     account = Account.find_by(user: user)
     account.update(yahoo_status: "実行中")
-    lb = ENV['LOWEST_PRICE'].to_f
-    if lb == 0 then
+    interval = ENV['YAHOO_INTERVAL']
+
+    if interval != nil then
+      interval = interval.to_f
+    else
+      interval = 1.0
+    end
+
+    lb = ENV['LOWEST_PRICE']
+    if lb == nil then
       lb = 0.10
+    else
+      lb = lb.to_f
     end
     logger.debug(data)
     counter = 0
@@ -230,7 +240,7 @@ class Product < ApplicationRecord
           query = title
         end
       end
-      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s + '&pf=' + cprice.to_s
+      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s + '&pf=' + lp.to_s
       url = URI.escape(turl)
       logger.debug(url)
       charset = nil
@@ -239,7 +249,7 @@ class Product < ApplicationRecord
       uanum = ua.length
       user_agent = ua[rand(uanum)][0]
 
-      sleep(1.1)
+      sleep(interval)
 
       begin
 
@@ -261,9 +271,17 @@ class Product < ApplicationRecord
           yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
           yahoo_code = yahoo_code.gsub("/","_")
 
-          request2 = Typhoeus::Request.new(page)
-          request2.run
-          html2 = request2.response.body
+          #request2 = Typhoeus::Request.new(page)
+          #request2.run
+          #html2 = request2.response.body
+
+          user_agent = ua[rand(uanum)][0]
+
+          html2 = open(page, "User-Agent" => user_agent) do |f|
+            charset = f.charset
+            f.read # htmlを読み込んで変数htmlに渡す
+          end
+
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
 
           yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0].inner_text
