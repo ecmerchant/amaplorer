@@ -242,7 +242,7 @@ class Product < ApplicationRecord
 
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
-        html = request.response.body
+        #html = request.response.body
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
