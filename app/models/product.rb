@@ -250,12 +250,14 @@ class Product < ApplicationRecord
       user_agent = ua[rand(uanum)][0]
 
       sleep(interval)
-
+      status_code1 = ""
+      status_code2 = ""
       begin
 
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
           f.read # htmlを読み込んで変数htmlに渡す
+          status_code1 = f.status[0].to_s + ":" + f.status[1]
         end
 
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
@@ -280,6 +282,7 @@ class Product < ApplicationRecord
           html2 = open(page, "User-Agent" => user_agent) do |f|
             charset = f.charset
             f.read # htmlを読み込んで変数htmlに渡す
+            status_code2 = f.status[0].to_s + ":" + f.status[1]
           end
 
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
@@ -342,6 +345,7 @@ class Product < ApplicationRecord
         logger.debug(e)
       end
       counter += 1
+      logger.debug("title:" + yahoo_title + " status1:" + status_code1 + " status2:" + status_code2)
       account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
     end
     logger.debug("\n====END YAHOO DATA=======")
