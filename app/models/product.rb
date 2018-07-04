@@ -200,10 +200,13 @@ class Product < ApplicationRecord
   def yahoo_shopping(user, uid)
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
-    data = target.pluck(:asin, :title, :jan, :mpn)
+    data = target.pluck(:asin, :title, :jan, :mpn, :cart_price)
     account = Account.find_by(user: user)
     account.update(yahoo_status: "実行中")
-
+    lb = ENV['LOWEST_PRICE'].to_f
+    if lb == 0 then
+      lb = 0.10
+    end
     logger.debug(data)
     counter = 0
     for var in data do
@@ -212,6 +215,11 @@ class Product < ApplicationRecord
       title = var[1]
       jan = var[2]
       mpn = var[3]
+      cprice = var[4]
+      if cprice == nil then
+        cprice = 0
+      end
+      lp = (cprice * lb).round
       logger.debug(asin)
 
       query = jan
@@ -222,7 +230,7 @@ class Product < ApplicationRecord
           query = title
         end
       end
-      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s
+      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s + '&pf=' + cprice.to_s
       url = URI.escape(turl)
       logger.debug(url)
       charset = nil
