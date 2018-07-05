@@ -140,7 +140,7 @@ class Product < ApplicationRecord
 
       logger.debug(parser)
           
-      ttasin = parser.dig('Product')
+      ttasin = parser.dig(0, 'Product')
       logger.debug(ttasin)
       parser.each do |product|
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
