@@ -84,7 +84,12 @@ class Product < ApplicationRecord
         logger.debug(product.class)
         
         if product.class == Array then 
-          product = product.first
+          logger.debug("Product is Array")
+          tt = product
+          ss = Hash.new
+          ss['Product'] = tt[1]
+          product = ss
+          logger.debug(product)
         end
           
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
