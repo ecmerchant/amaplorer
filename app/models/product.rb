@@ -79,9 +79,14 @@ class Product < ApplicationRecord
       logger.debug(asins)
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
-      logger.debug(parser)
+
       parser.each do |product|
-        logger.debug(product)
+        logger.debug(product.class)
+        
+        if product.class == Array then 
+          product = product.first
+        end
+          
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== cart price ====")
         cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
@@ -112,6 +117,7 @@ class Product < ApplicationRecord
           category = nil
           rank = nil
         end
+        
         temp = target.find_or_create_by(asin: asin)
         temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
       end
