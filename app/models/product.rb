@@ -322,7 +322,9 @@ class Product < ApplicationRecord
           f.read # htmlを読み込んで変数htmlに渡す
           status_code1 = f.status[0].to_s + ":" + f.status[1]
         end
-
+        logger.debug("==== HTML ST =====")
+        logger.debug(html)
+        logger.debug("==== HTML EN =====")
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
         #html = request.response.body
