@@ -79,14 +79,16 @@ class Product < ApplicationRecord
       logger.debug(asins)
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
-
+      logger.debug(parser)
+          
       parser.each do |product|
-        logger.debug(product.class)
+        logger.debug("===========")
+        logger.debug(product)
         
         if product.class == Array then 
           logger.debug("Product is Array")
           logger.debug(product)
-          tt = product
+          tt = parser
           ss = Hash.new
           ss['Product'] = tt[1]
           product = ss
