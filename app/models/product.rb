@@ -138,14 +138,44 @@ class Product < ApplicationRecord
       response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
       parser = response.parse
 
-      logger.debug(parser)
-          
-      ttasin = parser.dig(0, 'Product')
-      logger.debug(ttasin)
-      parser.each do |product|
-        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+      if parser.class == Array then
+        parser.each do |product|
+          asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+          logger.debug("===== asin =======\n" + asin)
+          buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
+          lowestprice = 0
+          lowestship = 0
+          lowestpoint = 0
+          logger.debug("===== buf =======\n")
+          logger.debug(buf)
+          if buf != nil then
+            logger.debug(buf.length)
+            lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
+            lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
+            lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
+            if lowestpoint == nil then
+              lowestpoint = 0
+            end
+            if lowestship == nil then
+              lowestship = 0
+            end
+            if lowestprice == nil then
+              lowestprice = 0
+            end
+          else
+            lowestprice = 0
+            lowestship = 0
+            lowestpoint = 0
+          end
+          temp = target.find_or_create_by(asin: asin)
+          ecounter += 1
+          temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+        end
+      else
+        logger.debug("===== ONE ASIN =======\n")
+        asin = parser.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== asin =======\n" + asin)
-        buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
+        buf = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
         lowestprice = 0
         lowestship = 0
         lowestpoint = 0
@@ -153,9 +183,9 @@ class Product < ApplicationRecord
         logger.debug(buf)
         if buf != nil then
           logger.debug(buf.length)
-          lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
-          lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
-          lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
+          lowestprice = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
+          lowestship = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
+          lowestpoint = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
           if lowestpoint == nil then
             lowestpoint = 0
           end
@@ -174,7 +204,7 @@ class Product < ApplicationRecord
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
-
+              
       requests = []
       i = 0
 
