@@ -138,6 +138,7 @@ class Product < ApplicationRecord
       response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
       parser = response.parse
 
+      logger.debug(parser)
       parser.each do |product|
           
         vvv = false
