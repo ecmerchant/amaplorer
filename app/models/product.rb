@@ -81,19 +81,28 @@ class Product < ApplicationRecord
       parser = response.parse
       logger.debug(parser)
           
-      products = parser.dig('Product')
-          
-      products.each do |product|
+      parser.each do |product|
         logger.debug("===========")
         logger.debug(product)
-
-        asin = product.dig('Identifiers', 'MarketplaceASIN', 'ASIN')
+        vvv = false
+        if product.class == Array then 
+          logger.debug("Product is Array")
+          logger.debug(product)
+          ss = Hash.new
+          ss['Product'] = product[1]
+          product = nil 
+          product = ss
+          logger.debug(product)
+          vvv = true
+        end
+          
+        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== cart price ====")
-        cartprice = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
+        cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
         logger.debug("===== cart ship ====")
-        cartship = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
+        cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
         logger.debug("===== cart point ====")
-        cartpoint = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
+        cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
         if cartprice == nil then
           cartprice = 0
         end
@@ -103,7 +112,7 @@ class Product < ApplicationRecord
         if cartpoint == nil then
           cartpoint = 0
         end
-        salesrank = product.dig('SalesRankings', 'SalesRank')
+        salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
         logger.debug("===== sales rank ====")
         if salesrank != nil then
           if salesrank.class == Array then
@@ -120,8 +129,11 @@ class Product < ApplicationRecord
         
         temp = target.find_or_create_by(asin: asin)
         temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
-      end
-
+        if vvv == true then
+          break
+        end
+      end 
+          
       logger.debug("===== LOWEST NEW =======")
       response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
       parser = response.parse
