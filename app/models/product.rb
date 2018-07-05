@@ -81,8 +81,11 @@ class Product < ApplicationRecord
 
       parser.each do |product|
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+        logger.debug("===== cart price ====")
         cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
+        logger.debug("===== cart ship ====")
         cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
+        logger.debug("===== cart point ====")
         cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
         if cartprice == nil then
           cartprice = 0
@@ -94,6 +97,7 @@ class Product < ApplicationRecord
           cartpoint = 0
         end
         salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
+        logger.debug("===== sales rank ====")
         if salesrank != nil then
           if salesrank.class == Array then
             category = salesrank.last.dig('ProductCategoryId')
