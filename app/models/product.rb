@@ -139,6 +139,19 @@ class Product < ApplicationRecord
       parser = response.parse
 
       parser.each do |product|
+          
+        vvv = false
+        if product.class == Array then 
+          logger.debug("Product is Array")
+          logger.debug(product)
+          ss = Hash.new
+          ss['Product'] = product[1]
+          product = nil 
+          product = ss
+          logger.debug(product)
+          vvv = true
+        end
+            
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
         lowestprice = 0
@@ -166,6 +179,9 @@ class Product < ApplicationRecord
         temp = target.find_or_create_by(asin: asin)
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+        if vvv == true then
+          break
+        end
       end
 
       requests = []
