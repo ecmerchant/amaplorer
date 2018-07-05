@@ -85,6 +85,7 @@ class Product < ApplicationRecord
         
         if product.class == Array then 
           logger.debug("Product is Array")
+          logger.debug(product)
           tt = product
           ss = Hash.new
           ss['Product'] = tt[1]
