@@ -83,7 +83,7 @@ class Product < ApplicationRecord
           
       parser.each do |product|
         logger.debug("===========")
-        logger.debug(product)
+
         vvv = false
         if product.class == Array then 
           logger.debug("Product is Array")
@@ -313,17 +313,19 @@ class Product < ApplicationRecord
       sleep(interval)
       status_code1 = ""
       status_code2 = ""
+      
       begin
 
-        html = open(url, "User-Agent" => user_agent) do |f|
-          charset = f.charset
-          f.read # htmlを読み込んで変数htmlに渡す
-          status_code1 = f.status[0].to_s + ":" + f.status[1]
-        end
+        #html = open(url, "User-Agent" => user_agent) do |f|
+        #  charset = f.charset
+        #  f.read # htmlを読み込んで変数htmlに渡す
+        #  status_code1 = f.status[0].to_s + ":" + f.status[1]
+        #end
 
-        #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
-        #request.run
-        #html = request.response.body
+        request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
+        request.run
+        html = request.response.body
+        
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
