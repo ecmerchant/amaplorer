@@ -139,6 +139,9 @@ class Product < ApplicationRecord
       parser = response.parse
 
       logger.debug(parser)
+          
+      ttasin = parser.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+      logger.debug(ttasin)
       parser.each do |product|
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== asin =======\n" + asin)
