@@ -6,6 +6,9 @@ Rails.application.routes.draw do
 
   get 'products/top'
 
+  get 'products/get_yahoo'
+  get 'products/get_amazon'
+
   get 'products/search'
   post 'products/search'
 

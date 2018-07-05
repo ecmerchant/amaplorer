@@ -20,7 +20,7 @@ class Product < ApplicationRecord
     end
 
     target = Product.where(user:user, unique_id:uid)
-    orgasins = target.pluck(:asin)
+    orgasins = target.group(:asin).pluck(:asin)
 
     orgasins.each_slice(10) do |arr|
       logger.debug("\n======START=========")
@@ -322,6 +322,10 @@ class Product < ApplicationRecord
           f.read # htmlを読み込んで変数htmlに渡す
         end
 
+        logger.debug("==== HTML ST1 =====")
+        logger.debug(html)
+        logger.debug("==== HTML EN1 =====")
+
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
         #html = request.response.body
@@ -408,7 +412,7 @@ class Product < ApplicationRecord
           if account.premium == true then
             points = points + temp.premium_point.to_f
           end
-          if account.softbank == true then 
+          if account.softbank == true then
             points = points + temp.softbank_point.to_f
           end
 

@@ -44,7 +44,7 @@ class ProductsController < ApplicationController
     @login_user = current_user
     @account = Account.find_by(user: current_user.email)
     temp = Product.where(listing: true)
-    @products = temp.order("RANDOM()").limit(5)
+    @products = temp.order("RANDOM()").limit(6)
   end
 
   def output
@@ -152,6 +152,20 @@ class ProductsController < ApplicationController
       tuser.update(user_level: ulevel)
       logger.debug("====== Regist from Form End =======")
     end
+  end
+
+  def get_amazon
+    account = Account.find_by(user: current_user.email)
+    uid = account.unique_id
+    GetItemDataJob.perform_later(current_user.email, uid)
+    redirect_to products_search_path
+  end
+
+  def get_yahoo
+    account = Account.find_by(user: current_user.email)
+    uid = account.unique_id
+    GetYahooDataJob.perform_later(current_user.email, uid)
+    redirect_to products_search_path
   end
 
   private
