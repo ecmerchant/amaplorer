@@ -140,24 +140,14 @@ class Product < ApplicationRecord
 
       logger.debug(parser)
       parser.each do |product|
-          
-        vvv = false
-        if product.class == Array then 
-          logger.debug("Product is Array")
-          logger.debug(product)
-          ss = Hash.new
-          ss['Product'] = product[1]
-          product = nil 
-          product = ss
-          logger.debug(product)
-          vvv = true
-        end
-            
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+        logger.debug("===== asin =======\n" + asin)
         buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
         lowestprice = 0
         lowestship = 0
         lowestpoint = 0
+        logger.debug("===== buf =======\n")
+        logger.debug(buf)
         if buf != nil then
           logger.debug(buf.length)
           lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
