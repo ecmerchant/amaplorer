@@ -320,16 +320,18 @@ class Product < ApplicationRecord
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
           f.read # htmlを読み込んで変数htmlに渡す
-          status_code1 = f.status[0].to_s + ":" + f.status[1]
         end
-        logger.debug("==== HTML ST =====")
-        logger.debug(html)
-        logger.debug("==== HTML EN =====")
+        
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
         #html = request.response.body
         
         doc = Nokogiri::HTML.parse(html, nil, charset)
+        
+        logger.debug("==== HTML ST =====")
+        logger.debug(doc)
+        logger.debug("==== HTML EN =====")
+        
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
         
@@ -351,7 +353,6 @@ class Product < ApplicationRecord
           html2 = open(page, "User-Agent" => user_agent) do |f|
             charset = f.charset
             f.read # htmlを読み込んで変数htmlに渡す
-            status_code2 = f.status[0].to_s + ":" + f.status[1]
           end
 
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
@@ -415,7 +416,7 @@ class Product < ApplicationRecord
         logger.debug(e)
       end
       counter += 1
-      logger.debug("title:" + yahoo_title + " status1:" + status_code1 + " status2:" + status_code2)
+      logger.debug("title:" + yahoo_title)
       account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
     end
     logger.debug("\n====END YAHOO DATA=======")
