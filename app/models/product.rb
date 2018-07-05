@@ -76,10 +76,12 @@ class Product < ApplicationRecord
 
       logger.debug("get cart data")
       logger.debug("===== CART PRICE =======")
+      logger.debug(asins)
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
-
+      logger.debug(parser)
       parser.each do |product|
+        logger.debug(product)
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== cart price ====")
         cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
