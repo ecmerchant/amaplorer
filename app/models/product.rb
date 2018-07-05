@@ -173,9 +173,6 @@ class Product < ApplicationRecord
         temp = target.find_or_create_by(asin: asin)
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
-        if vvv == true then
-          break
-        end
       end
 
       requests = []
