@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180630060513) do
+ActiveRecord::Schema.define(version: 20180705131750) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -61,6 +61,8 @@ ActiveRecord::Schema.define(version: 20180630060513) do
     t.boolean  "listing"
     t.string   "yahoo_title"
     t.float    "amazon_fee"
+    t.integer  "profit"
+    t.integer  "listing_count"
   end
 
   create_table "users", force: :cascade do |t|

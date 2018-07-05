@@ -81,22 +81,22 @@ class Product < ApplicationRecord
       response = client.get_competitive_pricing_for_asin(asins)
       parser = response.parse
       logger.debug(parser)
-          
+
       parser.each do |product|
         logger.debug("===========")
 
         vvv = false
-        if product.class == Array then 
+        if product.class == Array then
           logger.debug("Product is Array")
           logger.debug(product)
           ss = Hash.new
           ss['Product'] = product[1]
-          product = nil 
+          product = nil
           product = ss
           logger.debug(product)
           vvv = true
         end
-          
+
         asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== cart price ====")
         cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
@@ -127,14 +127,14 @@ class Product < ApplicationRecord
           category = nil
           rank = nil
         end
-        
+
         temp = target.find_or_create_by(asin: asin)
         temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
         if vvv == true then
           break
         end
-      end 
-          
+      end
+
       logger.debug("===== LOWEST NEW =======")
       response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
       parser = response.parse
@@ -205,7 +205,7 @@ class Product < ApplicationRecord
         ecounter += 1
         temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
       end
-              
+
       requests = []
       i = 0
 
@@ -314,30 +314,30 @@ class Product < ApplicationRecord
       sleep(interval)
       status_code1 = ""
       status_code2 = ""
-      
+
       begin
 
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
           f.read # htmlを読み込んで変数htmlに渡す
         end
-        
+
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
         #html = request.response.body
-        
+
         doc = Nokogiri::HTML.parse(html, nil, charset)
-        
+
         logger.debug("==== HTML ST =====")
         logger.debug(doc)
         logger.debug("==== HTML EN =====")
-        
+
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
-        
+
         logger.debug("==== Item Hit? =====")
         logger.debug(temp)
-        
+
         if temp != nil then
           logger.debug("==== Item Found =====")
           page = temp.xpath('.//a').attribute("href").text
@@ -397,7 +397,27 @@ class Product < ApplicationRecord
           end
           isvalid = true
           temp = target.find_or_create_by(asin: asin)
-          temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point)
+
+          if temp.cart_price != 0 then
+            aprice = temp.cart_price.to_i + temp.cart_shipping.to_i
+          else
+            aprice = temp.lowest_price.to_i + temp.lowest_shipping.to_i
+          end
+
+          points = temp.normal_point.to_f
+          if account.premium == true then
+            points = points + temp.premium_point.to_f
+          end
+          if account.softbank == true then 
+            points = points + temp.softbank_point.to_f
+          end
+
+          if (temp.yahoo_price.to_f - points) != 0 then
+            profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
+          else
+            profit = 0
+          end
+          temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         else
           logger.debug("==== Item NOT Found =====")
           temp = target.find_or_create_by(asin: asin)
@@ -409,7 +429,8 @@ class Product < ApplicationRecord
           normal_point = 0
           premium_point = 0
           softbank_point = 0
-          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point)
+          profit = 0
+          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         end
       rescue => e
         logger.debug("Error!!\n")

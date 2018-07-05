@@ -21,7 +21,7 @@ class ProductsController < ApplicationController
     @limitnum = 19
     if @account != nil then
       uid = Account.find_by(user: current_user.email).unique_id
-      @products = Product.where(user: current_user.email, unique_id: uid)
+      @products = Product.where(user: current_user.email, unique_id: uid).order(profit: "DESC")
     else
       @account = Account.new
       @products = nil
@@ -38,7 +38,6 @@ class ProductsController < ApplicationController
       LoadAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
       #redirect_to products_search_path
     end
-
   end
 
   def top
@@ -66,7 +65,9 @@ class ProductsController < ApplicationController
       stream = stream.tosjis
       data.each do |key, value|
         temp = products.find_by(asin: key)
-        temp.update(listing: true)
+
+        cc = temp.listing_count.to_i + 1
+        temp.update(listing: true, listing_count: cc)
         logger.debug(stream.encoding)
 
         for p in 0..27
