@@ -81,27 +81,19 @@ class Product < ApplicationRecord
       parser = response.parse
       logger.debug(parser)
           
-      parser.each do |product|
+      products = parser.dig('Product')
+          
+      products.each do |product|
         logger.debug("===========")
         logger.debug(product)
-        
-        if product.class == Array then 
-          logger.debug("Product is Array")
-          logger.debug(product)
-          ss = Hash.new
-          ss['Product'] = product[1]
-          product = nil 
-          product = ss
-          logger.debug(product)
-        end
-          
-        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+
+        asin = product.dig('Identifiers', 'MarketplaceASIN', 'ASIN')
         logger.debug("===== cart price ====")
-        cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
+        cartprice = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
         logger.debug("===== cart ship ====")
-        cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
+        cartship = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
         logger.debug("===== cart point ====")
-        cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
+        cartpoint = product.dig('CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
         if cartprice == nil then
           cartprice = 0
         end
@@ -111,7 +103,7 @@ class Product < ApplicationRecord
         if cartpoint == nil then
           cartpoint = 0
         end
-        salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
+        salesrank = product.dig('SalesRankings', 'SalesRank')
         logger.debug("===== sales rank ====")
         if salesrank != nil then
           if salesrank.class == Array then
