@@ -266,9 +266,12 @@ class Product < ApplicationRecord
         doc = Nokogiri::HTML.parse(html, nil, charset)
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
-
+        
+        logger.debug("==== Item Hit? =====")
+        logger.debug(temp)
+        
         if temp != nil then
-
+          logger.debug("==== Item Found =====")
           page = temp.xpath('.//a').attribute("href").text
           yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
           yahoo_code = yahoo_code.gsub("/","_")
@@ -329,6 +332,7 @@ class Product < ApplicationRecord
           temp = target.find_or_create_by(asin: asin)
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point)
         else
+          logger.debug("==== Item NOT Found =====")
           temp = target.find_or_create_by(asin: asin)
           yahoo_title = "該当なし"
           yahoo_price = 0
