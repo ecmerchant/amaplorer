@@ -92,11 +92,7 @@ class LoadAsinJob < ApplicationJob
             logger.debug(tag)
             account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
             temp = Product.find_or_create_by(user:user, asin:tag)
-            if temp.profit != nil then
-              temp.update(unique_id: uid)
-            else
-              temp.update(unique_id: uid, profit: 0)
-            end
+            temp.update(unique_id: uid)
               
             if ulevel == "trial" then
               counter += 1
@@ -129,11 +125,8 @@ class LoadAsinJob < ApplicationJob
         logger.debug(tag)
         temp = Product.find_or_create_by(user:user, asin:tag)
         ecounter += 1
-        if temp.profit != nil then
-          temp.update(unique_id: uid)
-        else
-          temp.update(unique_id: uid, profit: 0)
-        end
+        temp.update(unique_id: uid)
+
         account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
         if ulevel == "trial" then
           counter += 1
