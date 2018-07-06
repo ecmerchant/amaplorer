@@ -262,7 +262,7 @@ class Product < ApplicationRecord
   def yahoo_shopping(user, uid)
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
-    data = target.group(:asin).pluck(:asin, :title, :jan, :mpn, :cart_price)
+    data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
     account = Account.find_by(user: user)
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
