@@ -92,8 +92,8 @@ class LoadAsinJob < ApplicationJob
             logger.debug(tag)
             account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
             temp = Product.find_or_create_by(user:user, asin:tag)
-            temp.update(unique_id: uid)
-              
+            temp.update(unique_id: uid, isvalid: true)
+
             if ulevel == "trial" then
               counter += 1
               if counter > limitnum then
@@ -125,7 +125,7 @@ class LoadAsinJob < ApplicationJob
         logger.debug(tag)
         temp = Product.find_or_create_by(user:user, asin:tag)
         ecounter += 1
-        temp.update(unique_id: uid)
+        temp.update(unique_id: uid, isvalid: true)
 
         account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
         if ulevel == "trial" then

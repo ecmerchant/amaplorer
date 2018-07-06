@@ -20,7 +20,7 @@ class Product < ApplicationRecord
     end
 
     target = Product.where(user:user, unique_id:uid)
-
+    target.update(isvalid: true)
     orgasins = target.group(:asin).pluck(:asin)
 
     orgasins.each_slice(10) do |arr|
