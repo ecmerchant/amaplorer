@@ -21,7 +21,7 @@ class ProductsController < ApplicationController
     @limitnum = 19
     if @account != nil then
       uid = Account.find_by(user: current_user.email).unique_id
-      @products = Product.where(user: current_user.email, unique_id: uid, is_valid: true).order(profit: :desc).limit(300)
+      @products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).order(profit: :desc).limit(300)
     else
       @account = Account.new
       @products = nil
