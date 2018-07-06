@@ -20,6 +20,7 @@ class Product < ApplicationRecord
     end
 
     target = Product.where(user:user, unique_id:uid)
+    
     orgasins = target.group(:asin).pluck(:asin)
 
     orgasins.each_slice(10) do |arr|
@@ -250,7 +251,12 @@ class Product < ApplicationRecord
         fee = fee.to_f / 1000
         logger.debug(fee)
         temp = target.find_or_create_by(asin: asin)
-        temp.update(amazon_fee: fee)
+        profit = temp.profit
+        if profit != nil then
+          temp.update(amazon_fee: fee)
+        else
+          temp.update(amazon_fee: fee, profit: 0)
+        end
       end
       account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
       logger.debug("\n======END=========")
