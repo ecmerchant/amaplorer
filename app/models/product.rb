@@ -417,11 +417,8 @@ class Product < ApplicationRecord
             points = points + temp.softbank_point.to_f
           end
 
-          if (temp.yahoo_price.to_f - points) != 0 then
-            profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
-          else
-            profit = 0
-          end
+          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
+
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         else
           logger.debug("==== Item NOT Found =====")
