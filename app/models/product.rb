@@ -20,7 +20,7 @@ class Product < ApplicationRecord
     end
 
     target = Product.where(user:user, unique_id:uid)
-    
+
     orgasins = target.group(:asin).pluck(:asin)
 
     orgasins.each_slice(10) do |arr|
@@ -313,19 +313,17 @@ class Product < ApplicationRecord
       user_agent = ua[rand(uanum)][0]
 
       sleep(interval)
-      status_code1 = ""
-      status_code2 = ""
 
       begin
 
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
+          ss = f.status
+          logger.debug("==== HTTP STATUS 1 =====")
+          logger.debug(ss)
+          logger.debug("======================")
           f.read # htmlを読み込んで変数htmlに渡す
         end
-
-        logger.debug("==== HTML ST1 =====")
-        logger.debug(html)
-        logger.debug("==== HTML EN1 =====")
 
         #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
         #request.run
@@ -333,15 +331,15 @@ class Product < ApplicationRecord
 
         doc = Nokogiri::HTML.parse(html, nil, charset)
 
-        logger.debug("==== HTML ST =====")
-        logger.debug(doc)
-        logger.debug("==== HTML EN =====")
+        logger.debug("==== HTTP ST =====")
+        logger.debug(doc.xpath('//title').inner_text)
+        logger.debug("==== HTTP EN =====")
 
         temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
         isvalid = false
 
         logger.debug("==== Item Hit? =====")
-        logger.debug(temp)
+        #logger.debug(temp)
 
         if temp != nil then
           logger.debug("==== Item Found =====")
@@ -358,6 +356,10 @@ class Product < ApplicationRecord
           html2 = open(page, "User-Agent" => user_agent) do |f|
             charset = f.charset
             f.read # htmlを読み込んで変数htmlに渡す
+            ss = f.status
+            logger.debug("==== HTTP STATUS 2 =====")
+            logger.debug(ss)
+            logger.debug("======================")
           end
 
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
@@ -418,6 +420,10 @@ class Product < ApplicationRecord
           end
 
           profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
+
+          logger.debug("==== profit =====")
+          logger.debug(profit)
+          logger.debug("==== profit end =====")
 
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         else
