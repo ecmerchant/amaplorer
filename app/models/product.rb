@@ -355,11 +355,11 @@ class Product < ApplicationRecord
 
           html2 = open(page, "User-Agent" => user_agent) do |f|
             charset = f.charset
-            f.read # htmlを読み込んで変数htmlに渡す
             ss = f.status
             logger.debug("==== HTTP STATUS 2 =====")
             logger.debug(ss)
             logger.debug("======================")
+            f.read # htmlを読み込んで変数htmlに渡す
           end
 
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
