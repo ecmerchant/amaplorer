@@ -442,6 +442,18 @@ class Product < ApplicationRecord
       rescue => e
         logger.debug("Error!!\n")
         logger.debug(e)
+        logger.debug("==== Item Error =====")
+        temp = target.find_or_create_by(asin: asin)
+        yahoo_title = "商品情報なし"
+        yahoo_price = 0
+        yahoo_shipping = 0
+        yahoo_code = nil
+        yahoo_image = nil
+        normal_point = 0
+        premium_point = 0
+        softbank_point = 0
+        profit = 0
+        temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
       end
       counter += 1
       logger.debug("title:" + yahoo_title)
