@@ -387,12 +387,17 @@ class Product < ApplicationRecord
             logger.debug("======================")
             f.read # htmlを読み込んで変数htmlに渡す
           end
-
+          logger.debug(page)
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
 
-          yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0].inner_text
+          yahoo_price = doc2.xpath('//span[@class="elNumber"]')
+          if yahoo_price != nil then
+            yahoo_price = yahoo_price[0].inner_text
+          else
+             yahoo_price = doc2.xpath('//span[@class="elNum"]')
+          end
           yahoo_price = yahoo_price.gsub("," , "")
-
+          logger.debug(yahoo_price)
           if yahoo_price == nil then
             yahoo_price = 0
           end
@@ -404,14 +409,14 @@ class Product < ApplicationRecord
             yahoo_shipping = yahoo_shipping.gsub("送料", "")
             yahoo_shipping = yahoo_shipping.gsub("円", "")
           end
-
+          logger.debug(yahoo_shipping)
           yahoo_title = doc2.xpath('//div[@class="elTitle"]/h2')[0].inner_text
           yahoo_image = doc2.xpath('//div[@class="elMain"]//img').attribute("src").text
           yahoo_image = yahoo_image.gsub("/i/l/","/i/g/")
           normal_point = 0
           premium_point = 0
           softbank_point = 0
-
+          logger.debug(yahoo_title)
           buf1 = doc2.xpath('//div[@class="elList"]')
           for buf2 in buf1 do
             buf = buf2.xpath('.//dl')
