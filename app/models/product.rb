@@ -392,7 +392,7 @@ class Product < ApplicationRecord
 
           yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0]
           logger.debug(yahoo_price)
-          if yahoo_price[0] != nil then
+          if yahoo_price != nil then
             yahoo_price = yahoo_price.inner_text
           else
              yahoo_price = doc2.xpath('//span[@class="elNum"]')[0].inner_text
