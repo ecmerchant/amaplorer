@@ -13,6 +13,14 @@ class Product < ApplicationRecord
     account.update(yahoo_status: "準備中")
     ecounter = 0
 
+    t = Time.now
+    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+    account.msend(
+      "【ヤフープレミアムハンター】\nアマゾン取得開始しました。\n開始時間："+strTime,
+      account.cw_api_token,
+      account.cw_room_id
+    )
+
     Amazon::Ecs.configure do |options|
       options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
       options[:AWS_secret_key] = ENV['PA_AWS_SECRET_KEY_ID']
@@ -256,6 +264,15 @@ class Product < ApplicationRecord
       logger.debug("\n======END=========")
     end
     account.update(amazon_status: "完了 " + ecounter.to_s + "件済")
+
+    t = Time.now
+    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+    account.msend(
+      "【ヤフープレミアムハンター】\nアマゾン取得終了しました。\n終了時間："+strTime,
+      account.cw_api_token,
+      account.cw_room_id
+    )
+
     logger.debug("\n====END AMAZON DATA=======")
   end
 
@@ -266,6 +283,16 @@ class Product < ApplicationRecord
     account = Account.find_by(user: user)
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
+
+    cand = 0
+    dd = 0
+    t = Time.now
+    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+    account.msend(
+      "【ヤフープレミアムハンター】\nヤフーショッピング取得開始しました。\n開始時間："+strTime,
+      account.cw_api_token,
+      account.cw_room_id
+    )
 
     if interval != nil then
       interval = interval.to_f
@@ -279,7 +306,7 @@ class Product < ApplicationRecord
     else
       lb = lb.to_f
     end
-    logger.debug(data)
+    #logger.debug(data)
     counter = 0
     for var in data do
 
@@ -424,6 +451,10 @@ class Product < ApplicationRecord
           logger.debug(profit)
           logger.debug("==== profit end =====")
 
+          if profit > 0 then
+            cand += 1
+          end
+
           temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         else
           logger.debug("==== Item NOT Found =====")
@@ -442,6 +473,20 @@ class Product < ApplicationRecord
       rescue => e
         logger.debug("Error!!\n")
         logger.debug(e)
+
+        if e.to_s == "999 Unable to process request at this time -- error 999" then
+          dd += 1
+          sleep(600 * dd)
+        end
+        logger.debug(ENV['ADMIN_CW_API_TOKEN'])
+        logger.debug(ENV['ADMIN_CW_ROOM_ID'])
+        t = Time.now
+        strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+        account.msend(
+          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nURL:" + url + "\nユニークID:" + uid +"\n発生時間："+strTime,
+          ENV['ADMIN_CW_API_TOKEN'],
+          ENV['ADMIN_CW_ROOM_ID']
+        )
         logger.debug("==== Item Error =====")
         temp = target.find_or_create_by(asin: asin)
         yahoo_title = "商品情報なし"
@@ -461,5 +506,12 @@ class Product < ApplicationRecord
     end
     logger.debug("\n====END YAHOO DATA=======")
     account.update(yahoo_status: "完了 " + counter.to_s + "件済")
+    t = Time.now
+    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+    account.msend(
+      "【ヤフープレミアムハンター】\nヤフーショッピング取得終了しました。\n終了時間："+strTime+"\n全"+ counter.to_s + "件中 候補商品 約" + cand.to_s + "件ヒット。",
+      account.cw_api_token,
+      account.cw_room_id
+    )
   end
 end

@@ -35,6 +35,14 @@ class ProductsController < ApplicationController
       else
         arg3 = nil
       end
+
+      t = Time.now
+      strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+      @account.msend(
+        "【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間："+strTime,
+        @account.cw_api_token,
+        @account.cw_room_id
+      )
       LoadAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
       #redirect_to products_search_path
     end

@@ -140,6 +140,14 @@ class LoadAsinJob < ApplicationJob
 
     logger.debug('======= GET ASIN END =========')
     account.update(asin_status: "完了 " + ecounter.to_s + "件済")
+    t = Time.now
+    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+    account.msend(
+      "【ヤフープレミアムハンター】\nASIN取得完了しました。" + ecounter.to_s +  "件取得。\n終了時間："+strTime,
+      account.cw_api_token,
+      account.cw_room_id
+    )
+
     a = Product.new
     a.amazon(user, uid)
     a.yahoo_shopping(user, uid)
