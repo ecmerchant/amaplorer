@@ -390,11 +390,12 @@ class Product < ApplicationRecord
           logger.debug(page)
           doc2 = Nokogiri::HTML.parse(html2, nil, charset)
 
-          yahoo_price = doc2.xpath('//span[@class="elNumber"]')
-          if yahoo_price != nil then
-            yahoo_price = yahoo_price[0].inner_text
+          yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0]
+          logger.debug(yahoo_price)
+          if yahoo_price[0] != nil then
+            yahoo_price = yahoo_price.inner_text
           else
-             yahoo_price = doc2.xpath('//span[@class="elNum"]')
+             yahoo_price = doc2.xpath('//span[@class="elNum"]')[0].inner_text
           end
           yahoo_price = yahoo_price.gsub("," , "")
           logger.debug(yahoo_price)
