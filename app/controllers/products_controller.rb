@@ -111,7 +111,7 @@ class ProductsController < ApplicationController
       logger.debug(stream)
       t = Time.now
       strTime = t.strftime("%Y%m%D%H%M%S")
-      fname = "出品CSV_" + strTime + ".csv"
+      fname = "出品CSV_" + strTime + ".tsv"
       send_data(stream, filename: fname)
     else
       redirect_to products_search_path
