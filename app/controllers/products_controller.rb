@@ -99,7 +99,7 @@ class ProductsController < ApplicationController
               stream = stream + "New" + "\t"
             when 7 then
               stream = stream + account.condition_note.to_s.tosjis + "\t"
-            when 14 then
+            when 15 then
               stream = stream + account.lead_time.to_s.tosjis + "\t"
             when 27 then
               stream = stream + "" + "\n"
