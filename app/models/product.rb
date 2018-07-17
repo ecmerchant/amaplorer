@@ -281,6 +281,7 @@ class Product < ApplicationRecord
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
     account = Account.find_by(user: user)
+
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
 
@@ -478,14 +479,9 @@ class Product < ApplicationRecord
         end
       rescue => e
         logger.debug("Error!!\n")
-        logger.debug(e)
 
-        if e.to_s == "999 Unable to process request at this time -- error 999" then
-          dd += 1
-          sleep(600 * dd)
-        end
-        logger.debug(ENV['ADMIN_CW_API_TOKEN'])
-        logger.debug(ENV['ADMIN_CW_ROOM_ID'])
+        #logger.debug(ENV['ADMIN_CW_API_TOKEN'])
+        #logger.debug(ENV['ADMIN_CW_ROOM_ID'])
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(
@@ -505,6 +501,10 @@ class Product < ApplicationRecord
         softbank_point = 0
         profit = 0
         temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+        if e.message == "999 Unable to process request at this time -- error 999" then
+          dd += 1
+          sleep(100 * dd)
+        end
       end
       counter += 1
       logger.debug("title:" + yahoo_title)

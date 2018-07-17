@@ -1,8 +1,9 @@
 <div class="page-header" id="banner">
   <div class="row">
     <div class="col-lg-12 col-md-12">
-      <h2>商品情報を取得</h2>
-      <div class="col-lg-5">
+      <h3>商品情報を取得</h3>
+      <div class="col-lg-7">
+
       <%= form_tag('/products/search', method:'post', multipart: true) do %>
         <div class="form-group">
           <div class="form-check" onclick="entryChange1();">
@@ -16,23 +17,40 @@
               ファイル
             </label>
           </div>
-          <div class="form-inline" id="url_form">
-            <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
-            <%= label_tag 'search[url]', 'URL:', class:'form-label' %>
-            <%= text_field_tag 'search[url]','', class:'form-control' %>
-          </div>
-          <div class="form-inline" id="asin_form" style="display: none;">
-            <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
-            <div class="form-group" style="width: 320px">
-              <%= file_field_tag :file %>
+
+          <div style="display:inline-flex">
+            <div class="col-lg-8">
+              <div class="form-inline" id="url_form">
+                <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
+                <%= label_tag 'search[url]', 'URL:', class:'form-label' %>
+                <%= text_field_tag 'search[url]','', class:'form-control' %>
+              </div>
+              <div class="form-inline" id="asin_form" style="display: none;">
+                <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
+                <div class="form-group" style="width: 320px">
+                  <%= file_field_tag :file %>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4">
+              <div style="display:inline-flex">
+              <%= form_tag('/products/get_amazon', method:'get') do %>
+                <%= submit_tag 'A再実行', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>
+              <% end %>
+              &nbsp;&nbsp;&nbsp;
+              <%= form_tag('/products/get_amazon', method:'get') do %>
+                <%= submit_tag 'Y再実行', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>
+              <% end %>
+              </div>
             </div>
           </div>
+
         </div>
       <% end %>
-      </div>
 
+      </div>
       <%= form_tag('/products/output', method:'post', multipart: true) do %>
-        <div class="col-lg-7">
+        <div class="col-lg-5">
           <div class="form-group">
             <div class="form-check">
               <label class="form-check-label"></label>

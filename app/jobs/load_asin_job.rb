@@ -4,7 +4,8 @@ class LoadAsinJob < ApplicationJob
   require 'open-uri'
 
   rescue_from(StandardError) do |exception|
-   # Do something with the exception
+    # Do something with the exception
+    logger.debug("Standard Error Escape Active Job")
     logger.error exception
   end
 
