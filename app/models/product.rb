@@ -358,7 +358,7 @@ class Product < ApplicationRecord
           f.read # htmlを読み込んで変数htmlに渡す
         end
 
-        doc = Nokogiri::XML.parse(html)
+        doc = Nokogiri::HTML.parse(html, nil, charset)
         
         logger.debug("==== HTTP ST =====")
 
@@ -421,12 +421,12 @@ class Product < ApplicationRecord
             aprice = temp.lowest_price.to_i + temp.lowest_shipping.to_i
           end
 
-          points = temp.normal_point.to_f
+          points = normal_point.to_f
           if account.premium == true then
-            points = points + temp.premium_point.to_f
+            points = points + premium_point.to_f
           end
           if account.softbank == true then
-            points = points + temp.softbank_point.to_f
+            points = points + softbank_point.to_f
           end
 
           profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
@@ -478,7 +478,6 @@ class Product < ApplicationRecord
         softbank_point = 0
         profit = 0
         temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
-
       end
       counter += 1
       logger.debug("title:" + yahoo_title)
@@ -494,6 +493,4 @@ class Product < ApplicationRecord
       account.cw_room_id
     )
   end
-          
-          
 end
