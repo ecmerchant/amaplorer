@@ -276,7 +276,7 @@ class Product < ApplicationRecord
     logger.debug("\n====END AMAZON DATA=======")
   end
 
-　def yahoo_shopping(user, uid)
+  def yahoo_shopping(user, uid)
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
