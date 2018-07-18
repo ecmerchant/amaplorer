@@ -463,7 +463,7 @@ class Product < ApplicationRecord
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(
-          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nURL:" + url + "\nユニークID:" + uid +"\n発生時間："+strTime,
+          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nASIN:" + asin + "\nユニークID:" + uid +"\n発生時間："+strTime,
           ENV['ADMIN_CW_API_TOKEN'],
           ENV['ADMIN_CW_ROOM_ID']
         )
