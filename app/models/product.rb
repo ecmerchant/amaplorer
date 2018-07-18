@@ -284,8 +284,8 @@ class Product < ApplicationRecord
     yahoo_appid = ENV['YAHOO_APPID']
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
-    
-    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s
+
+    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&condition=new'
 
     cand = 0
     dd = 0
@@ -326,7 +326,7 @@ class Product < ApplicationRecord
 
       query = jan
       url = endpoint + '&jan=' + query.to_s + '&price_from=' + lp.to_s
-      
+
       if query == nil then
         if mpn != nil then
           query = mpn
@@ -359,7 +359,7 @@ class Product < ApplicationRecord
         end
 
         doc = Nokogiri::HTML.parse(html, nil, charset)
-        
+
         logger.debug("==== HTTP ST =====")
         logger.debug("==== HTTP EN =====")
 
@@ -379,7 +379,7 @@ class Product < ApplicationRecord
           #html2 = request2.response.body
 
           yahoo_price = temp.xpath('.//price').text
-          
+
           logger.debug(yahoo_price)
 
           yahoo_shipping = temp.xpath('.//shipping/code').text
@@ -392,16 +392,16 @@ class Product < ApplicationRecord
             logger.debug("yahoo_shipping_name")
             logger.debug(yahoo_shipping)
             yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)
-            if yahoo_shipping != nil then 
+            if yahoo_shipping != nil then
               yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
               yahoo_shipping = yahoo_shipping.gsub(",","")
-            else 
+            else
               yahoo_shipping = 0
-            end 
+            end
           end
-          
+
           logger.debug(yahoo_shipping)
-          
+
           yahoo_title = temp.xpath('.//name').text
           yahoo_image = temp.xpath('.//image/small').text
 
@@ -409,17 +409,17 @@ class Product < ApplicationRecord
           premium_point = 0
           softbank_point = 0
           logger.debug(yahoo_title)
-          
+
           normal_point = temp.xpath('.//point/amount').text
           premium_point = temp.xpath('.//point/premiumamount').text
           softbank_point = (yahoo_price.to_f * 0.05).round
-          
+
           logger.debug("=== Points ====")
           logger.debug(normal_point)
           logger.debug(premium_point)
           logger.debug(softbank_point)
 
-          
+
           isvalid = true
           temp = target.find_or_create_by(asin: asin)
 
@@ -436,7 +436,7 @@ class Product < ApplicationRecord
           if account.softbank == true then
             points = points + softbank_point.to_f
           end
-            
+
           logger.debug("==== profit Calc =====")
           logger.debug(profit)
           logger.debug("==== profit Calc end =====")
@@ -500,7 +500,7 @@ class Product < ApplicationRecord
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
     account.msend(
-      "【ヤフープレミアムハンター】\nヤフーショッピング取得終了しました。\n終了時間："+strTime+"\n全"+ counter.to_s + "件中 候補商品 約" + cand.to_s + "件ヒット。",
+      "【ヤフープレミアムハンター】\nヤフーショッピング取得終了しました。\n終了時間："+strTime+"\n全"+ counter.to_s + "件中 候補商品 約" + cand.to_s + "件ヒット。\n検索URL: " + account.amazon_url + "\n===================================",
       account.cw_api_token,
       account.cw_room_id
     )

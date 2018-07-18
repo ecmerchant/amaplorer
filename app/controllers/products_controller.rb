@@ -32,17 +32,20 @@ class ProductsController < ApplicationController
       data = params[:file]
       if data != nil then
         arg3 = CSV.read(data.path)
+        @account.update(amazon_url: data.path)
       else
+        @account.update(amazon_url: arg2)
         arg3 = nil
       end
 
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       @account.msend(
-        "【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間："+strTime,
+        "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
         @account.cw_api_token,
         @account.cw_room_id
       )
+
       LoadAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
       #redirect_to products_search_path
     end
