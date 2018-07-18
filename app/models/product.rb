@@ -361,17 +361,16 @@ class Product < ApplicationRecord
         doc = Nokogiri::HTML.parse(html, nil, charset)
         
         logger.debug("==== HTTP ST =====")
-        logger.debug(doc)
         logger.debug("==== HTTP EN =====")
 
-        temp = doc.xpath('//Hit')[0]
+        temp = doc.xpath('//hit')[0]
         isvalid = false
 
         logger.debug("==== Item Hit? =====")
 
         if temp != nil then
           logger.debug("==== Item Found =====")
-          page = temp.xpath('.//Url').text
+          page = temp.xpath('.//url').text
           yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
           yahoo_code = yahoo_code.gsub("/","_")
 
@@ -379,31 +378,31 @@ class Product < ApplicationRecord
           #request2.run
           #html2 = request2.response.body
 
-          yahoo_price = temp.xpath('.//Price').text
+          yahoo_price = temp.xpath('.//price').text
           
           logger.debug(yahoo_price)
 
-          yahoo_shipping = temp.xpath('.//Shipping/Code').text
-          if yahoo_shipping == 2 then
+          yahoo_shipping = temp.xpath('.//shipping/code').text
+          if yahoo_shipping.to_i == 2 || yahoo_shipping.to_i == 3  then
             yahoo_shipping = 0
           else
-            yahoo_shipping = temp.xpath('.//Shipping/Name').text
+            yahoo_shipping = temp.xpath('.//shipping/name').text
             yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
             yahoo_shipping = yahoo_shipping.gsub(",","")
           end
           
           logger.debug(yahoo_shipping)
           
-          yahoo_title = temp.xpath('.//Name').text
-          yahoo_image = temp.xpath('.//Image/Small').text
+          yahoo_title = temp.xpath('.//name').text
+          yahoo_image = temp.xpath('.//image/small').text
 
           normal_point = 0
           premium_point = 0
           softbank_point = 0
           logger.debug(yahoo_title)
           
-          normal_point = temp.xpath('.//Point/Amount').text
-          premium_point = temp.xpath('.//Point/PremiumAmount').text
+          normal_point = temp.xpath('.//point/amount').text
+          premium_point = temp.xpath('.//point/premiumamount').text
           softbank_point = (yahoo_price.to_f * 0.05).round
           
           logger.debug("=== Points ====")
