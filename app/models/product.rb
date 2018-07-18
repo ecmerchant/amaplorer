@@ -383,12 +383,21 @@ class Product < ApplicationRecord
           logger.debug(yahoo_price)
 
           yahoo_shipping = temp.xpath('.//shipping/code').text
+          logger.debug("yahoo_shipping")
+          logger.debug(yahoo_shipping)
           if yahoo_shipping.to_i == 2 || yahoo_shipping.to_i == 3  then
             yahoo_shipping = 0
           else
             yahoo_shipping = temp.xpath('.//shipping/name').text
-            yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
-            yahoo_shipping = yahoo_shipping.gsub(",","")
+            logger.debug("yahoo_shipping_name")
+            logger.debug(yahoo_shipping)
+            yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)
+            if yahoo_shipping != nil then 
+              yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
+              yahoo_shipping = yahoo_shipping.gsub(",","")
+            else 
+              yahoo_shipping = 0
+            end 
           end
           
           logger.debug(yahoo_shipping)
