@@ -361,10 +361,10 @@ class Product < ApplicationRecord
         doc = Nokogiri::HTML.parse(html, nil, charset)
         
         logger.debug("==== HTTP ST =====")
-
+        logger.debug(doc)
         logger.debug("==== HTTP EN =====")
 
-        temp = doc.xpath('//Hit[@index="1"]')[0]
+        temp = doc.xpath('//Hit')[0]
         isvalid = false
 
         logger.debug("==== Item Hit? =====")
