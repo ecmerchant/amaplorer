@@ -349,7 +349,6 @@ class Product < ApplicationRecord
       sleep(interval)
 
       begin
-
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
           ss = f.status
@@ -359,7 +358,7 @@ class Product < ApplicationRecord
           f.read # htmlを読み込んで変数htmlに渡す
         end
 
-        doc = Nokogiri::XML.parse(html, nil, charset)
+        doc = Nokogiri::XML.parse(html)
         
         logger.debug("==== HTTP ST =====")
 
@@ -395,7 +394,7 @@ class Product < ApplicationRecord
           
           logger.debug(yahoo_shipping)
           
-          yahoo_title = temp.xpath(',//Name').text
+          yahoo_title = temp.xpath('.//Name').text
           yahoo_image = temp.xpath('.//Image/Small').text
 
           normal_point = 0
@@ -463,7 +462,7 @@ class Product < ApplicationRecord
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(
-          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nASIN:" + asin.to_s + "\nユニークID:" + uid.to_s +"\n発生時間："+strTime,
+          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\nASIN:" + asin.to_s + "\n発生時間:" + strTime,
           ENV['ADMIN_CW_API_TOKEN'],
           ENV['ADMIN_CW_ROOM_ID']
         )
