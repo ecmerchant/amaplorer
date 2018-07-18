@@ -276,14 +276,16 @@ class Product < ApplicationRecord
     logger.debug("\n====END AMAZON DATA=======")
   end
 
-  def yahoo_shopping(user, uid)
+　def yahoo_shopping(user, uid)
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
     account = Account.find_by(user: user)
-
+    yahoo_appid = ENV['YAHOO_APPID']
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
+    
+    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s
 
     cand = 0
     dd = 0
@@ -323,15 +325,20 @@ class Product < ApplicationRecord
       logger.debug(asin)
 
       query = jan
+      url = endpoint + '&jan=' + query.to_s + '&price_from=' + lp.to_s
+      
       if query == nil then
         if mpn != nil then
           query = mpn
+          query = URI.escape(query)
+          url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
         else
           query = title
+          query = URI.escape(query)
+          url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
         end
       end
-      turl = 'https://shopping.yahoo.co.jp/search?used=2&p=' + query.to_s + '&pf=' + lp.to_s
-      url = URI.escape(turl)
+
       logger.debug(url)
       charset = nil
 
@@ -352,25 +359,20 @@ class Product < ApplicationRecord
           f.read # htmlを読み込んで変数htmlに渡す
         end
 
-        #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
-        #request.run
-        #html = request.response.body
-
-        doc = Nokogiri::HTML.parse(html, nil, charset)
-
+        doc = Nokogiri::XML.parse(html, nil, charset)
+        
         logger.debug("==== HTTP ST =====")
-        logger.debug(doc.xpath('//title').inner_text)
+
         logger.debug("==== HTTP EN =====")
 
-        temp = doc.xpath('//div[@class="elItemWrapper"]')[0]
+        temp = doc.xpath('//Hit[@index="1"]')[0]
         isvalid = false
 
         logger.debug("==== Item Hit? =====")
-        #logger.debug(temp)
 
         if temp != nil then
           logger.debug("==== Item Found =====")
-          page = temp.xpath('.//a').attribute("href").text
+          page = temp.xpath('.//Url').text
           yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
           yahoo_code = yahoo_code.gsub("/","_")
 
@@ -378,63 +380,44 @@ class Product < ApplicationRecord
           #request2.run
           #html2 = request2.response.body
 
-          user_agent = ua[rand(uanum)][0]
-
-          html2 = open(page, "User-Agent" => user_agent) do |f|
-            charset = f.charset
-            ss = f.status
-            logger.debug("==== HTTP STATUS 2 =====")
-            logger.debug(ss)
-            logger.debug("======================")
-            f.read # htmlを読み込んで変数htmlに渡す
-          end
-          logger.debug(page)
-          doc2 = Nokogiri::HTML.parse(html2, nil, charset)
-
-          yahoo_price = doc2.xpath('//span[@class="elNumber"]')[0]
-          logger.debug(yahoo_price)
+          yahoo_price = temp.xpath('.//Price')
           if yahoo_price != nil then
-            yahoo_price = yahoo_price.inner_text
+            yahoo_price = yahoo_price.text
           else
-             yahoo_price = doc2.xpath('//span[@class="elNum"]')[0].inner_text
-          end
-          yahoo_price = yahoo_price.gsub("," , "")
-          logger.debug(yahoo_price)
-          if yahoo_price == nil then
             yahoo_price = 0
           end
+          
+          logger.debug(yahoo_price)
 
-          yahoo_shipping = doc2.xpath('//p[@class="elCost"]/em')[0].inner_text
-          if yahoo_shipping == "送料無料" then
+          yahoo_shipping = temp.xpath('.//Shipping/Code).text
+          if yahoo_shipping == 2 then
             yahoo_shipping = 0
           else
-            yahoo_shipping = yahoo_shipping.gsub("送料", "")
-            yahoo_shipping = yahoo_shipping.gsub("円", "")
+            yahoo_shipping = temp.xpath('.//Shipping/Name).text
+            yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
+            yahoo_shipping = yahoo_shipping.gsub(",","")
           end
+          
           logger.debug(yahoo_shipping)
-          yahoo_title = doc2.xpath('//div[@class="elTitle"]/h2')[0].inner_text
-          yahoo_image = doc2.xpath('//div[@class="elMain"]//img').attribute("src").text
-          yahoo_image = yahoo_image.gsub("/i/l/","/i/g/")
+          
+          yahoo_title = temp.xpath(',//Name').text
+          yahoo_image = temp.xpath('.//Image/Small').text
+
           normal_point = 0
           premium_point = 0
           softbank_point = 0
           logger.debug(yahoo_title)
-          buf1 = doc2.xpath('//div[@class="elList"]')
-          for buf2 in buf1 do
-            buf = buf2.xpath('.//dl')
-            for elem in buf do
-              if elem.inner_text.index('通常ポイント') != nil then
-                normal_point = elem.xpath('.//span[@class="elPoint"]/text()')[0].inner_text
-                normal_point = normal_point.gsub(",","")
-              elsif elem.inner_text.index('プレミアム会員') != nil then
-                premium_point = elem.xpath('.//span[@class="elPoint"]/text()')[0].inner_text
-                premium_point = premium_point.gsub(",","")
-              elsif elem.inner_text.index('ソフトバンク') != nil then
-                softbank_point = elem.xpath('.//span[@class="elPoint"]/text()')[0].inner_text
-                softbank_point = softbank_point.gsub(",","")
-              end
-            end
-          end
+          
+          normal_point = temp.xpath('.//Point/Amount').text
+          premium_point = temp.xpath('.//Point/PremiumAmount').text
+          softbank_point = (yahoo_price.to_f * 0.05).round
+          
+          logger.debug("=== Points ====")
+          logger.debug(normal_point)
+          logger.debug(premium_point)
+          logger.debug(softbank_point)
+
+          
           isvalid = true
           temp = target.find_or_create_by(asin: asin)
 
@@ -520,4 +503,6 @@ class Product < ApplicationRecord
       account.cw_room_id
     )
   end
+          
+          
 end
