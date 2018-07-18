@@ -380,20 +380,15 @@ class Product < ApplicationRecord
           #request2.run
           #html2 = request2.response.body
 
-          yahoo_price = temp.xpath('.//Price')
-          if yahoo_price != nil then
-            yahoo_price = yahoo_price.text
-          else
-            yahoo_price = 0
-          end
+          yahoo_price = temp.xpath('.//Price').text
           
           logger.debug(yahoo_price)
 
-          yahoo_shipping = temp.xpath('.//Shipping/Code).text
+          yahoo_shipping = temp.xpath('.//Shipping/Code').text
           if yahoo_shipping == 2 then
             yahoo_shipping = 0
           else
-            yahoo_shipping = temp.xpath('.//Shipping/Name).text
+            yahoo_shipping = temp.xpath('.//Shipping/Name').text
             yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
             yahoo_shipping = yahoo_shipping.gsub(",","")
           end
