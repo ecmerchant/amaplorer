@@ -363,7 +363,7 @@ class Product < ApplicationRecord
         logger.debug("==== HTTP ST =====")
         logger.debug("==== HTTP EN =====")
 
-        temp = doc.xpath('//hit')[0]
+        temp = doc.xpath('//hit[@index="1"]')[0]
         isvalid = false
 
         logger.debug("==== Item Hit? =====")
