@@ -436,8 +436,12 @@ class Product < ApplicationRecord
           if account.softbank == true then
             points = points + softbank_point.to_f
           end
+            
+          logger.debug("==== profit Calc =====")
+          logger.debug(profit)
+          logger.debug("==== profit Calc end =====")
 
-          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i
+          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (yahoo_price.to_f - points + yahoo_shipping.to_f)).to_i
 
           logger.debug("==== profit =====")
           logger.debug(profit)
