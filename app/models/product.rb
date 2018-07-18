@@ -463,7 +463,7 @@ class Product < ApplicationRecord
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(
-          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nASIN:" + asin + "\nユニークID:" + uid +"\n発生時間："+strTime,
+          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user + "\nASIN:" + asin.to_s + "\nユニークID:" + uid.to_s +"\n発生時間："+strTime,
           ENV['ADMIN_CW_API_TOKEN'],
           ENV['ADMIN_CW_ROOM_ID']
         )
@@ -479,10 +479,7 @@ class Product < ApplicationRecord
         softbank_point = 0
         profit = 0
         temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
-        if e.message == "999 Unable to process request at this time -- error 999" then
-          dd += 1
-          sleep(100 * dd)
-        end
+
       end
       counter += 1
       logger.debug("title:" + yahoo_title)
