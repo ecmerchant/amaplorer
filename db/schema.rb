@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180718151733) do
+ActiveRecord::Schema.define(version: 20180722145533) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -64,6 +64,7 @@ ActiveRecord::Schema.define(version: 20180718151733) do
     t.float    "amazon_fee"
     t.integer  "profit"
     t.integer  "listing_count"
+    t.integer  "fba_fee"
   end
 
   create_table "users", force: :cascade do |t|

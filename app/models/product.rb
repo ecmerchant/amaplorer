@@ -227,7 +227,7 @@ class Product < ApplicationRecord
           IdValue: asin,
           PriceToEstimateFees: prices,
           Identifier: "req" + i.to_s,
-          IsAmazonFulfilled: false
+          IsAmazonFulfilled: true
         }
         requests[i] = request
         i += 1
@@ -243,22 +243,30 @@ class Product < ApplicationRecord
       asins.each do |asin|
         fee = 0
         temp2 = doc2.xpath("//FeesEstimateResult")
+
         for tt in temp2
           casin = tt.xpath("FeesEstimateIdentifier/IdValue")[0].text
           if casin == asin then
             tfee = tt.xpath("FeesEstimate/FeeDetailList/FeeDetail/FeeAmount/Amount")[0]
             if tfee != nil then
               fee = tfee.text
+              totalfee = tt.xpath("FeesEstimate/TotalFeesEstimate/Amount")
+              if totalfee != nil then
+                totalfee = totalfee.text
+                logger.debug(totalfee)
+              end
               break
             end
           end
         end
         logger.debug("\n======FEE=========")
-        logger.debug(fee)
+
+        fbafee = totalfee.to_i - fee.to_i
         fee = fee.to_f / 1000
         logger.debug(fee)
+        logger.debug(fbafee)
         temp = target.find_or_create_by(asin: asin)
-        temp.update(amazon_fee: fee)
+        temp.update(amazon_fee: fee, fba_fee: fbafee)
       end
       account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
       logger.debug("\n======END=========")
@@ -441,7 +449,7 @@ class Product < ApplicationRecord
           logger.debug(profit)
           logger.debug("==== profit Calc end =====")
 
-          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (yahoo_price.to_f - points + yahoo_shipping.to_f)).to_i
+          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (yahoo_price.to_f - points + yahoo_shipping.to_f) - temp.fba_fee.to_f).to_i
 
           logger.debug("==== profit =====")
           logger.debug(profit)
