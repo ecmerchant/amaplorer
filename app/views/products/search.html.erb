@@ -100,7 +100,7 @@
             <% if @account.premium == true then points = points + temp.premium_point.to_f end %>
             <% if @account.softbank == true then points = points + temp.softbank_point.to_f end %>
             <% if temp.cart_price != 0 then aprice = temp.cart_price.to_f + temp.cart_shipping.to_f else aprice = temp.lowest_price.to_f + temp.lowest_shipping.to_f end %>
-            <% if (temp.yahoo_price.to_f - points) != 0 then profit = (aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i else profit = 0 end %>
+            <% if (temp.yahoo_price.to_f - points) != 0 then profit = (aprice - (aprice * temp.amazon_fee.to_f + temp.fba_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)).to_i else profit = 0 end %>
             <tr>
               <% if temp.listing == true then checked = 'checked="checked"' else checked = "" end %>
               <% checked = "" %>
