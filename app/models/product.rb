@@ -289,6 +289,8 @@ class Product < ApplicationRecord
   end
 
   def yahoo_shopping(user, uid)
+    cc = 0
+    upto = 3
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
@@ -364,7 +366,7 @@ class Product < ApplicationRecord
       user_agent = ua[rand(uanum)][0]
 
       sleep(interval)
-
+      cc = 0
       begin
         html = open(url, "User-Agent" => user_agent) do |f|
           charset = f.charset
@@ -485,7 +487,9 @@ class Product < ApplicationRecord
         end
       rescue => e
         logger.debug("Error!!\n")
-
+        cc += 1
+        retry if cc < upto
+        next
         #logger.debug(ENV['ADMIN_CW_API_TOKEN'])
         #logger.debug(ENV['ADMIN_CW_ROOM_ID'])
         t = Time.now

@@ -21,6 +21,9 @@ class GetAsinJob < ApplicationJob
     account.update(asin_status: "実行中", amazon_status: "準備中", yahoo_status: "準備中")
     ecounter = 0
 
+    upto = 5
+    cc = 0
+
     casins = Hash.new
 
     ulevel = account.user_level
@@ -45,21 +48,21 @@ class GetAsinJob < ApplicationJob
           user_agent = ua[rand(uanum)][0]
           logger.debug("user_agent" + user_agent)
           sleep(1.1)
-          #request = Typhoeus::Request.new(url, followlocation: true, headers: {"User-Agent": user_agent })
-          #request.run
-          #html = request.response.body
-          #doc = Nokogiri::HTML.parse(html, nil, charset)
-
+          cc = 0
           begin
             html = open(url, "User-Agent" => user_agent) do |f|
               charset = f.charset
               f.read # htmlを読み込んで変数htmlに渡す
             end
           rescue OpenURI::HTTPError => error
+
             response = error.io
             logger.debug("\nNo." + i.to_s + "\n")
             logger.debug("error!!\n")
             logger.debug(error)
+            cc += 1
+            retry if cc < upto
+            next
           end
 
           doc = Nokogiri::HTML.parse(html, nil)
