@@ -68,6 +68,14 @@ class LoadAsinJob < ApplicationJob
 
           #終了条件1：検索結果がヒットしない
           hbody = html.force_encoding("UTF-8")
+
+          rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
+          logger.debug("=====================")
+          if rnum != nil then
+            logger.debug(rnum[1])
+          end
+          logger.debug("=====================")
+
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
             break

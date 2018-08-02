@@ -47,7 +47,7 @@ class GetAsinJob < ApplicationJob
           ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
           uanum = ua.length
           user_agent = ua[rand(uanum)][0]
-          logger.debug("user_agent" + user_agent)
+          logger.debug("user_agent:" + user_agent)
           sleep(1.1)
           cc = 0
 
@@ -82,10 +82,13 @@ class GetAsinJob < ApplicationJob
           asins = doc.css('li/@data-asin')
           hbody = html.force_encoding("UTF-8")
 
-          rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)[1]
+          rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
           logger.debug("=====================")
-          logger.debug(rnum)
+          if rnum != nil then
+            logger.debug(rnum[1])
+          end
           logger.debug("=====================")
+
           #終了条件1：検索結果がヒットしない
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
