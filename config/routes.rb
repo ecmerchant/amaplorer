@@ -5,7 +5,7 @@ Rails.application.routes.draw do
   root to: 'products#top'
 
   get 'products/top'
-
+  get 'products/get_asin'
   get 'products/get_yahoo'
   get 'products/get_amazon'
 

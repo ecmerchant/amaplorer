@@ -179,6 +179,32 @@ class ProductsController < ApplicationController
     redirect_to products_search_path
   end
 
+  def get_asin
+    @login_user = current_user
+    @account = Account.find_by(user: current_user.email)
+    @limitnum = 19
+    if @account != nil then
+      uid = Account.find_by(user: current_user.email).unique_id
+      @products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).where("profit > 0").order("profit DESC").limit(ENV['SHOW_NUM'])
+    else
+      @account = Account.new
+      @products = nil
+    end
+
+    arg1 = 'from_url'
+    arg2 = @account.amazon_url
+    data = nil
+    if data != nil then
+      arg3 = CSV.read(data.path)
+      @account.update(amazon_url: data.path)
+    else
+      @account.update(amazon_url: arg2)
+      arg3 = nil
+    end
+    GetAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
+    redirect_to products_search_path
+  end
+
   private
   def user_params
      params.require(:account).permit(:user, :seller_id, :mws_auth_token, :cw_api_token, :cw_room_id, :condition_note, :lead_time, :softbank, :premium)
