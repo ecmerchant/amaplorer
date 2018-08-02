@@ -55,7 +55,6 @@ class GetAsinJob < ApplicationJob
               f.read # htmlを読み込んで変数htmlに渡す
             end
           rescue OpenURI::HTTPError => error
-
             response = error.io
             logger.debug("\nNo." + i.to_s + "\n")
             logger.debug("error!!\n")
@@ -66,11 +65,49 @@ class GetAsinJob < ApplicationJob
           end
 
           doc = Nokogiri::HTML.parse(html, nil)
-
           asins = doc.css('li/@data-asin')
+          hbody = html.force_encoding("UTF-8")
+
+          if hbody.include?("の検索に一致する商品はありませんでした") then
+            logger.debug("========== CASE E ===========")
+            bb = 0
+            loop do
+              cc = 0
+              bb += 1
+              logger.debug(bb)
+              begin
+                html = open(url, "User-Agent" => user_agent) do |f|
+                  charset = f.charset
+                  f.read # htmlを読み込んで変数htmlに渡す
+                end
+              rescue OpenURI::HTTPError => error
+                response = error.io
+                logger.debug("\nNo." + i.to_s + "\n")
+                logger.debug("error!!\n")
+                logger.debug(error)
+                cc += 1
+                retry if cc < upto
+                next
+              end
+
+              doc = Nokogiri::HTML.parse(html, nil)
+              asins = doc.css('li/@data-asin')
+              hbody = html.force_encoding("UTF-8")
+
+              if hbody.include?("の検索に一致する商品はありませんでした") == false then
+                break
+              else
+                if bb > upto then
+                  break
+                end
+              end
+            end
+            if bb > upto then
+              break
+            end
+          end
 
           #終了条件1：検索結果がヒットしない
-          hbody = html.force_encoding("UTF-8")
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
             break
@@ -79,7 +116,6 @@ class GetAsinJob < ApplicationJob
           #終了条件2：ASINがヒットしない
           if asins.count == 0 then
             logger.debug("ASINなし")
-            logger.debug(html)
             break
           end
 
