@@ -102,7 +102,10 @@ class LoadAsinJob < ApplicationJob
               end
             end
           end
-
+          #メモリ開放用
+          logger.debug("\n====== GC START =========")
+          ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+          GC.start
         rescue => e
           logger.debug("エラーあり")
           logger.debug(e)
@@ -136,6 +139,10 @@ class LoadAsinJob < ApplicationJob
           end
         end
       end
+      #メモリ開放用
+      logger.debug("\n====== GC START =========")
+      ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+      GC.start
       logger.debug(asin)
     end
 
@@ -150,8 +157,16 @@ class LoadAsinJob < ApplicationJob
     )
 
     a = Product.new
+    #メモリ開放用
+    logger.debug("\n====== GC START =========")
+    ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+    GC.start
     a.amazon(user, uid)
     a.yahoo_shopping(user, uid)
+    #メモリ開放用
+    logger.debug("\n====== GC START =========")
+    ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+    GC.start
     #GetItemDataJob.perform_later(current_user.email, uid)
   end
 end

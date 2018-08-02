@@ -73,6 +73,7 @@ gem 'redis'
 gem 'resque'
 gem 'daemons'
 gem 'resque-scheduler'
+gem 'puma_worker_killer'
 
 # gem for background processing
 gem 'delayed_job_active_record'

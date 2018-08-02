@@ -269,6 +269,10 @@ class Product < ApplicationRecord
         temp.update(amazon_fee: fee, fba_fee: fbafee)
       end
       account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
+      #メモリ開放用
+      logger.debug("\n====== GC START =========")
+      ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+      GC.start
       logger.debug("\n======END=========")
     end
     account.update(amazon_status: "完了 " + ecounter.to_s + "件済")
@@ -292,7 +296,12 @@ class Product < ApplicationRecord
     yahoo_appid = ENV['YAHOO_APPID']
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
-
+    skip = ENV['GC_INTERVAL']
+    ecounter = 0
+    if skip == nil then
+      skip = 5
+    end
+    logger.debug(skip)
     endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&condition=new'
 
     cand = 0
@@ -500,8 +509,16 @@ class Product < ApplicationRecord
         temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
       end
       counter += 1
+      ecounter += 1
       logger.debug("title:" + yahoo_title)
       account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
+      if ecounter == skip then
+        #メモリ開放用
+        logger.debug("\n====== GC START =========")
+        ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+        GC.start
+        ecounter = 0
+      end
     end
     logger.debug("\n====END YAHOO DATA=======")
     account.update(yahoo_status: "完了 " + counter.to_s + "件済")
@@ -512,5 +529,11 @@ class Product < ApplicationRecord
       account.cw_api_token,
       account.cw_room_id
     )
+
+    #メモリ開放用
+    logger.debug("\n====== GC START =========")
+    ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+    GC.start
+
   end
 end
