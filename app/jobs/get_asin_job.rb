@@ -51,6 +51,7 @@ class GetAsinJob < ApplicationJob
           sleep(1.1)
           cc = 0
 
+=begin
           request = Typhoeus::Request.new(
             url,
             method: :get,
@@ -59,8 +60,8 @@ class GetAsinJob < ApplicationJob
           )
           request.run
           html = request.response.body
+=end
 
-=begin
           begin
             html = open(url, "User-Agent" => user_agent) do |f|
               charset = f.charset
@@ -75,12 +76,16 @@ class GetAsinJob < ApplicationJob
             retry if cc < upto
             next
           end
-=end
+
 
           doc = Nokogiri::HTML.parse(html, nil)
           asins = doc.css('li/@data-asin')
           hbody = html.force_encoding("UTF-8")
 
+          rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)[1]
+          logger.debug("=====================")
+          logger.debug(rnum)
+          logger.debug("=====================")
           #終了条件1：検索結果がヒットしない
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
