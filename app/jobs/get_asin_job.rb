@@ -79,6 +79,7 @@ class GetAsinJob < ApplicationJob
           #終了条件2：ASINがヒットしない
           if asins.count == 0 then
             logger.debug("ASINなし")
+            logger.debug(html)
             break
           end
 
