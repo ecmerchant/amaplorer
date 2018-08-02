@@ -71,12 +71,46 @@ class GetAsinJob < ApplicationJob
           #終了条件1：検索結果がヒットしない
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
+            logger.debug(hbody)
             break
           end
 
-          if hbody.include?("noResultsTitle") then
-            logger.debug("検索結果なし")
-            break
+          if asins.count == 0 then
+            logger.debug("====検索結果なし2====")
+            logger.debug(hbody)
+            logger.debug("====検索結果なし2 END====")
+            i += 1
+            url = org_url + '&page=' + i.to_s
+            logger.debug("URL：" + url)
+
+            ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
+            uanum = ua.length
+            user_agent = ua[rand(uanum)][0]
+            logger.debug("user_agent" + user_agent)
+            sleep(1.1)
+            cc = 0
+            begin
+              html = open(url, "User-Agent" => user_agent) do |f|
+                charset = f.charset
+                f.read # htmlを読み込んで変数htmlに渡す
+              end
+            rescue OpenURI::HTTPError => error
+              response = error.io
+              logger.debug("\nNo." + i.to_s + "\n")
+              logger.debug("error!!\n")
+              logger.debug(error)
+              cc += 1
+              retry if cc < upto
+              next
+            end
+
+            doc = Nokogiri::HTML.parse(html, nil)
+            asins = doc.css('li/@data-asin')
+            hbody = html.force_encoding("UTF-8")
+
+            if asins.count == 0 then
+              break
+            end
           end
 
           #終了条件2：ASINがヒットしない
