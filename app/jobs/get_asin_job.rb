@@ -3,6 +3,7 @@ class GetAsinJob < ApplicationJob
 
   require 'nokogiri'
   require 'open-uri'
+  require 'typhoeus'
 
   rescue_from(StandardError) do |exception|
     # Do something with the exception
@@ -50,7 +51,13 @@ class GetAsinJob < ApplicationJob
           sleep(1.1)
           cc = 0
 
-          request = Typhoeus.get(url, followlocation: true, headers: {"User-Agent" => user_agent})
+          request = Typhoeus::Request.new(
+            url,
+            method: :get,
+            followlocation: true,
+            headers: {"User-Agent" => user_agent}
+          )
+          request.run
           html = request.response.body
 
 =begin
@@ -68,7 +75,7 @@ class GetAsinJob < ApplicationJob
             retry if cc < upto
             next
           end
-=end 
+=end
 
           doc = Nokogiri::HTML.parse(html, nil)
           asins = doc.css('li/@data-asin')
