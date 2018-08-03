@@ -29,6 +29,9 @@ class LoadAsinJob < ApplicationJob
     uid = d.strftime("%Y%m%d%H%M%S")
     tu = Account.find_by(user: user)
     tu.update(unique_id: uid)
+
+    tproduct = Product.where(user: user)
+
     if condition == 'from_url' then
       #ASINの入力方法:URLの場合
       logger.debug('条件：URL')
@@ -100,8 +103,8 @@ class LoadAsinJob < ApplicationJob
             end
 
             logger.debug(tag)
-            account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
-            temp = Product.find_or_create_by(user:user, asin:tag)
+
+            temp = tproduct.find_or_create_by(asin:tag)
             temp.update(unique_id: uid, isvalid: true)
 
             if ulevel == "trial" then
@@ -112,6 +115,7 @@ class LoadAsinJob < ApplicationJob
             end
           end
           #メモリ開放用
+          account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
           logger.debug("\n====== GC START =========")
           ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
           GC.start
@@ -136,11 +140,11 @@ class LoadAsinJob < ApplicationJob
       asin.each do |tasin|
         tag = tasin.to_s
         logger.debug(tag)
-        temp = Product.find_or_create_by(user:user, asin:tag)
+        temp = tproduct.find_or_create_by(asin:tag)
         ecounter += 1
         temp.update(unique_id: uid, isvalid: true)
 
-        account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+
         if ulevel == "trial" then
           counter += 1
           if counter > limitnum then
@@ -148,6 +152,7 @@ class LoadAsinJob < ApplicationJob
           end
         end
       end
+      account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
       #メモリ開放用
       logger.debug("\n====== GC START =========")
       ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
