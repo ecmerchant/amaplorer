@@ -70,23 +70,24 @@ class GetAsinJob < ApplicationJob
           doc = Nokogiri::HTML.parse(html, nil)
           asins = doc.css('li/@data-asin')
 
+          #終了条件2：ASINがヒットしない
+          if asins.count == 0 then
+            logger.debug("ASINなし")
+            break
+          end
+
+
           #終了条件1：検索結果がヒットしない
-          hbody = html.force_encoding("UTF-8")
-          rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
+          #hbody = html.force_encoding("UTF-8")
+          rnum = html.match(/<span id="s-result-count">([\s\S]*?)</)
           logger.debug("=====================")
           if rnum != nil then
             logger.debug(rnum[1])
           end
           logger.debug("=====================")
 
-          if hbody.include?("0件の検索結果") then
+          if html.include?("0件の検索結果") then
             logger.debug("検索結果なし")
-            break
-          end
-
-          #終了条件2：ASINがヒットしない
-          if asins.count == 0 then
-            logger.debug("ASINなし")
             break
           end
 
