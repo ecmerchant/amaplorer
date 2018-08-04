@@ -125,7 +125,7 @@ class LoadAsinJob < ApplicationJob
           account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
 
           #Product.import asin_list
-          Product.import asin_list, on_duplicate_key_update: [conflict_target: [:asin], columns: [:unique_id, :isvalid]]
+          Product.import asin_list, on_duplicate_key_update: {conflict_target: [:user, :asin], columns: [:unique_id, :isvalid]}
 
           asin_list = nil
           logger.debug("\n====== GC START =========")
