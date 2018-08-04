@@ -108,6 +108,8 @@ class GetAsinJob < ApplicationJob
           #  break
           #end
 
+          asin_list = Array.new
+
           asins.each do |temp_asin|
 
             asin.push(temp_asin)
@@ -121,9 +123,12 @@ class GetAsinJob < ApplicationJob
             end
 
             logger.debug(tag)
-            account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
-            temp = Product.find_or_create_by(user:user, asin:tag)
-            temp.update(unique_id: uid, isvalid: true)
+
+            asin_list << tproduct.new(asin:tag, unique_id: uid, isvalid: true)
+            #asin_list << Product.new(asin:tag)
+
+            #temp = tproduct.find_or_create_by(asin:tag)
+            #temp.update(unique_id: uid, isvalid: true)
 
             if ulevel == "trial" then
               counter += 1
@@ -132,6 +137,13 @@ class GetAsinJob < ApplicationJob
               end
             end
           end
+          #メモリ開放用
+          account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+
+          #Product.import asin_list
+          Product.import asin_list, on_duplicate_key_update: [conflict_target: [:id], columns: [:unique_id, :isvalid]]
+
+          asin_list = nil
           #メモリ開放用
           logger.debug("\n====== GC START =========")
           ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)

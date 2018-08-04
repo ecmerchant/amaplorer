@@ -2,6 +2,7 @@ class LoadAsinJob < ApplicationJob
   queue_as :default
   require 'nokogiri'
   require 'open-uri'
+  require 'activerecord-import'
 
   rescue_from(StandardError) do |exception|
     # Do something with the exception
@@ -40,13 +41,14 @@ class LoadAsinJob < ApplicationJob
       #URLからASINリストの作成
       loop do
         begin
+
           url = org_url + '&page=' + i.to_s
           logger.debug("URL：" + url)
 
           ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
           uanum = ua.length
           user_agent = ua[rand(uanum)][0]
-          logger.debug("user_agent" + user_agent)
+          logger.debug("user_agent:" + user_agent)
           sleep(1.1)
 
           cc = 0
@@ -90,6 +92,8 @@ class LoadAsinJob < ApplicationJob
             break
           end
 
+          asin_list = Array.new
+
           asins.each do |temp_asin|
 
             asin.push(temp_asin)
@@ -104,8 +108,11 @@ class LoadAsinJob < ApplicationJob
 
             logger.debug(tag)
 
-            temp = tproduct.find_or_create_by(asin:tag)
-            temp.update(unique_id: uid, isvalid: true)
+            asin_list << tproduct.new(asin:tag, unique_id: uid, isvalid: true)
+            #asin_list << Product.new(asin:tag)
+
+            #temp = tproduct.find_or_create_by(asin:tag)
+            #temp.update(unique_id: uid, isvalid: true)
 
             if ulevel == "trial" then
               counter += 1
@@ -116,6 +123,11 @@ class LoadAsinJob < ApplicationJob
           end
           #メモリ開放用
           account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+
+          #Product.import asin_list
+          Product.import asin_list, on_duplicate_key_update: [:unique_id, :isvalid]
+
+          asin_list = nil
           logger.debug("\n====== GC START =========")
           ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
           GC.start
@@ -175,8 +187,10 @@ class LoadAsinJob < ApplicationJob
     logger.debug("\n====== GC START =========")
     ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
     GC.start
-    a.amazon(user, uid)
-    a.yahoo_shopping(user, uid)
+
+    #a.amazon(user, uid)
+    #a.yahoo_shopping(user, uid)
+
     #メモリ開放用
     logger.debug("\n====== GC START =========")
     ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)

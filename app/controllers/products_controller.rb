@@ -5,8 +5,9 @@ class ProductsController < ApplicationController
   require 'csv'
   require 'peddler'
   require 'typhoeus'
-  require "date"
+  require 'date'
   require 'kconv'
+  require 'activerecord-import'
 
   before_action :authenticate_user!, :except => [:check, :regist]
   protect_from_forgery :except => [:check, :regist]
@@ -204,6 +205,7 @@ class ProductsController < ApplicationController
     GetAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
     redirect_to products_search_path
   end
+
 
   private
   def user_params

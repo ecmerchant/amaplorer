@@ -85,3 +85,4 @@ gem 'amazon-ecs'
 
 # gem for retry
 gem 'retryable'
+gem 'activerecord-import'
