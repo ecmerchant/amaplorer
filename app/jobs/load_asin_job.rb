@@ -108,7 +108,7 @@ class LoadAsinJob < ApplicationJob
 
             logger.debug(tag)
 
-            asin_list << tproduct.new(asin:tag, unique_id: uid, isvalid: true)
+            asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
             #asin_list << Product.new(asin:tag)
 
             #temp = tproduct.find_or_create_by(asin:tag)
