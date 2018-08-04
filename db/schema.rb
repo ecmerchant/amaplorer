@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180722145533) do
+ActiveRecord::Schema.define(version: 20180804013539) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -65,6 +65,7 @@ ActiveRecord::Schema.define(version: 20180722145533) do
     t.integer  "profit"
     t.integer  "listing_count"
     t.integer  "fba_fee"
+    t.index ["user", "asin"], name: "index_products_on_user_and_asin", unique: true
   end
 
   create_table "users", force: :cascade do |t|
