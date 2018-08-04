@@ -31,7 +31,7 @@ class LoadAsinJob < ApplicationJob
     tu = Account.find_by(user: user)
     tu.update(unique_id: uid)
 
-    tproduct = Product.where(user: user)
+    #tproduct = Product.where(user: user)
 
     if condition == 'from_url' then
       #ASINの入力方法:URLの場合
@@ -99,16 +99,15 @@ class LoadAsinJob < ApplicationJob
             asin.push(temp_asin)
             tag = temp_asin.to_s
 
-            if casins.key?(tag) then
-
-            else
+            if casins.key?(tag) == false then
+              asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
               casins[tag] = ecounter
               ecounter += 1
             end
 
             logger.debug(tag)
 
-            asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+            #asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
             #asin_list << Product.new(asin:tag)
 
             #temp = tproduct.find_or_create_by(asin:tag)
@@ -125,7 +124,7 @@ class LoadAsinJob < ApplicationJob
           account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
 
           #Product.import asin_list
-          tproduct.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
+          Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
 
           asin_list = nil
           logger.debug("\n====== GC START =========")
