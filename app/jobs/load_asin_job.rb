@@ -108,7 +108,7 @@ class LoadAsinJob < ApplicationJob
 
             logger.debug(tag)
 
-            asin_list << tproduct.new(asin:tag, unique_id: uid, isvalid: true)
+            asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
             #asin_list << Product.new(asin:tag)
 
             #temp = tproduct.find_or_create_by(asin:tag)
@@ -125,7 +125,7 @@ class LoadAsinJob < ApplicationJob
           account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
 
           #Product.import asin_list
-          Product.import asin_list, on_duplicate_key_update: [:unique_id, :isvalid]
+          Product.import asin_list, on_duplicate_key_update: [conflict_target: [:asin, :user], columns: [:unique_id, :isvalid]]
 
           asin_list = nil
           logger.debug("\n====== GC START =========")
