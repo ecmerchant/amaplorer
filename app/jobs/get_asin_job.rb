@@ -33,6 +33,7 @@ class GetAsinJob < ApplicationJob
     uid = d.strftime("%Y%m%d%H%M%S")
     tu = Account.find_by(user: user)
     tu.update(unique_id: uid)
+
     if condition == 'from_url' then
       #ASINの入力方法:URLの場合
       logger.debug('条件：URL')
@@ -41,6 +42,7 @@ class GetAsinJob < ApplicationJob
       #URLからASINリストの作成
       loop do
         begin
+
           url = org_url + '&page=' + i.to_s
           logger.debug("URL：" + url)
 
@@ -49,19 +51,8 @@ class GetAsinJob < ApplicationJob
           user_agent = ua[rand(uanum)][0]
           logger.debug("user_agent:" + user_agent)
           sleep(1.1)
+
           cc = 0
-
-=begin
-          request = Typhoeus::Request.new(
-            url,
-            method: :get,
-            followlocation: true,
-            headers: {"User-Agent" => user_agent}
-          )
-          request.run
-          html = request.response.body
-=end
-
           begin
             html = open(url, "User-Agent" => user_agent) do |f|
               charset = f.charset
@@ -77,9 +68,11 @@ class GetAsinJob < ApplicationJob
             next
           end
 
-
           doc = Nokogiri::HTML.parse(html, nil)
+
           asins = doc.css('li/@data-asin')
+
+          #終了条件1：検索結果がヒットしない
           hbody = html.force_encoding("UTF-8")
 
           rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
@@ -89,24 +82,16 @@ class GetAsinJob < ApplicationJob
           end
           logger.debug("=====================")
 
-          #終了条件1：検索結果がヒットしない
           if hbody.include?("0件の検索結果") then
             logger.debug("検索結果なし")
-            logger.debug(hbody)
-            break
-          end
-
-          if asins.count == 0 then
-            logger.debug("====検索結果なし2====")
             break
           end
 
           #終了条件2：ASINがヒットしない
-          #if asins.count == 0 then
-          #  logger.debug("ASINなし")
-          #  logger.debug(hbody)
-          #  break
-          #end
+          if asins.count == 0 then
+            logger.debug("ASINなし")
+            break
+          end
 
           asin_list = Array.new
 
@@ -115,16 +100,15 @@ class GetAsinJob < ApplicationJob
             asin.push(temp_asin)
             tag = temp_asin.to_s
 
-            if casins.key?(tag) then
-
-            else
+            if casins.key?(tag) == false then
+              asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
               casins[tag] = ecounter
               ecounter += 1
             end
 
             logger.debug(tag)
 
-            asin_list << tproduct.new(asin:tag, unique_id: uid, isvalid: true)
+            #asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
             #asin_list << Product.new(asin:tag)
 
             #temp = tproduct.find_or_create_by(asin:tag)
@@ -141,10 +125,8 @@ class GetAsinJob < ApplicationJob
           account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
 
           #Product.import asin_list
-          Product.import asin_list, on_duplicate_key_update: [conflict_target: [:id], columns: [:unique_id, :isvalid]]
-
+          Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
           asin_list = nil
-          #メモリ開放用
           logger.debug("\n====== GC START =========")
           ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
           GC.start
@@ -169,11 +151,18 @@ class GetAsinJob < ApplicationJob
       asin.each do |tasin|
         tag = tasin.to_s
         logger.debug(tag)
-        temp = Product.find_or_create_by(user:user, asin:tag)
-        ecounter += 1
-        temp.update(unique_id: uid, isvalid: true)
 
-        account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+        if casins.key?(tag) == false then
+          asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+          casins[tag] = ecounter
+          ecounter += 1
+        end
+
+        #temp = tproduct.find_or_create_by(asin:tag)
+        #ecounter += 1
+        #temp.update(unique_id: uid, isvalid: true)
+
+
         if ulevel == "trial" then
           counter += 1
           if counter > limitnum then
@@ -181,6 +170,9 @@ class GetAsinJob < ApplicationJob
           end
         end
       end
+      Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
+      asin_list = nil
+      account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
       #メモリ開放用
       logger.debug("\n====== GC START =========")
       ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)

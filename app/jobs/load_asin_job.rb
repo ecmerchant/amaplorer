@@ -31,8 +31,6 @@ class LoadAsinJob < ApplicationJob
     tu = Account.find_by(user: user)
     tu.update(unique_id: uid)
 
-    #tproduct = Product.where(user: user)
-
     if condition == 'from_url' then
       #ASINの入力方法:URLの場合
       logger.debug('条件：URL')
@@ -125,7 +123,6 @@ class LoadAsinJob < ApplicationJob
 
           #Product.import asin_list
           Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
-
           asin_list = nil
           logger.debug("\n====== GC START =========")
           ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
@@ -151,9 +148,16 @@ class LoadAsinJob < ApplicationJob
       asin.each do |tasin|
         tag = tasin.to_s
         logger.debug(tag)
-        temp = tproduct.find_or_create_by(asin:tag)
-        ecounter += 1
-        temp.update(unique_id: uid, isvalid: true)
+
+        if casins.key?(tag) == false then
+          asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+          casins[tag] = ecounter
+          ecounter += 1
+        end
+
+        #temp = tproduct.find_or_create_by(asin:tag)
+        #ecounter += 1
+        #temp.update(unique_id: uid, isvalid: true)
 
 
         if ulevel == "trial" then
@@ -163,6 +167,8 @@ class LoadAsinJob < ApplicationJob
           end
         end
       end
+      Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
+      asin_list = nil
       account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
       #メモリ開放用
       logger.debug("\n====== GC START =========")
@@ -187,8 +193,8 @@ class LoadAsinJob < ApplicationJob
     ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
     GC.start
 
-    #a.amazon(user, uid)
-    #a.yahoo_shopping(user, uid)
+    a.amazon(user, uid)
+    a.yahoo_shopping(user, uid)
 
     #メモリ開放用
     logger.debug("\n====== GC START =========")
