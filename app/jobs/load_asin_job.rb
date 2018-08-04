@@ -57,6 +57,12 @@ class LoadAsinJob < ApplicationJob
             logger.debug("\nNo." + i.to_s + "\n")
             logger.debug("error!!\n")
             logger.debug(error)
+
+            ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
+            uanum = ua.length
+            user_agent = ua[rand(uanum)][0]
+            logger.debug("user_agent:" + user_agent)
+            sleep(2.0 * (cc + 1))
             cc += 1
             retry if cc < upto
             next
