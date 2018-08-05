@@ -265,6 +265,13 @@ class Product < ApplicationRecord
         fee = fee.to_f / 1000
         logger.debug(fee)
         logger.debug(fbafee)
+        if fee == 0 then
+          fee = 0.15
+        end
+        if fba_fee == 0 then
+          fbafee = 500
+        end
+        
         temp = target.find_or_create_by(asin: asin)
         temp.update(amazon_fee: fee, fba_fee: fbafee)
       end
