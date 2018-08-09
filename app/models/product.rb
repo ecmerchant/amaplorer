@@ -30,6 +30,8 @@ class Product < ApplicationRecord
     target = Product.where(user:user, unique_id:uid)
     orgasins = target.group(:asin).pluck(:asin)
 
+    maxnum = orgasins.length
+
     orgasins.each_slice(10) do |arr|
       logger.debug("\n======START=========")
       asins = arr
@@ -96,12 +98,12 @@ class Product < ApplicationRecord
         vvv = false
         if product.class == Array then
           logger.debug("Product is Array")
-          logger.debug(product)
+          #logger.debug(product)
           ss = Hash.new
           ss['Product'] = product[1]
           product = nil
           product = ss
-          logger.debug(product)
+          #logger.debug(product)
           vvv = true
         end
 
@@ -156,7 +158,7 @@ class Product < ApplicationRecord
           lowestship = 0
           lowestpoint = 0
           logger.debug("===== buf =======\n")
-          logger.debug(buf)
+          #logger.debug(buf)
           if buf != nil then
             logger.debug(buf.length)
             lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
@@ -189,7 +191,7 @@ class Product < ApplicationRecord
         lowestship = 0
         lowestpoint = 0
         logger.debug("===== buf =======\n")
-        logger.debug(buf)
+        #logger.debug(buf)
         if buf != nil then
           logger.debug(buf.length)
           lowestprice = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
@@ -271,18 +273,20 @@ class Product < ApplicationRecord
         if fba_fee == 0 then
           fbafee = 500
         end
-        
+
         temp = target.find_or_create_by(asin: asin)
         temp.update(amazon_fee: fee, fba_fee: fbafee)
       end
-      account.update(amazon_status: "実行中 " + ecounter.to_s + "件済")
+      account.update(amazon_status: "実行中 " + ((ecounter.to_f / maxnum.to_f)*100).round.to_s + "%")
+      logger.debug(ecounter.to_i)
+      logger.debug("実行中 " + ((ecounter.to_i / maxnum.to_i)*100).round.to_s + "%")
       #メモリ開放用
       logger.debug("\n====== GC START =========")
       ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
       GC.start
       logger.debug("\n======END=========")
     end
-    account.update(amazon_status: "完了 " + ecounter.to_s + "件済")
+    account.update(amazon_status: "完了")
 
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
@@ -301,6 +305,9 @@ class Product < ApplicationRecord
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
+
+    maxnum = data.length
+
     account = Account.find_by(user: user)
     yahoo_appid = ENV['YAHOO_APPID']
     account.update(yahoo_status: "実行中")
@@ -522,7 +529,8 @@ class Product < ApplicationRecord
       counter += 1
       ecounter += 1
       logger.debug("title:" + yahoo_title)
-      account.update(yahoo_status: "実行中 " + counter.to_s + "件済")
+      logger.debug("実行中 " + ((counter.to_f / maxnum.to_f)*100).round.to_s + "%")
+      account.update(yahoo_status: "実行中 " + ((counter.to_f / maxnum.to_f)*100).round.to_s + "%")
       if ecounter == skip then
         #メモリ開放用
         logger.debug("\n====== GC START =========")
@@ -532,11 +540,11 @@ class Product < ApplicationRecord
       end
     end
     logger.debug("\n====END YAHOO DATA=======")
-    account.update(yahoo_status: "完了 " + counter.to_s + "件済")
+    account.update(yahoo_status: "完了")
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
     account.msend(
-      "【ヤフープレミアムハンター】\nヤフーショッピング取得終了しました。\n終了時間："+strTime+"\n全"+ counter.to_s + "件中 候補商品 約" + cand.to_s + "件ヒット。\n検索URL: " + account.amazon_url + "\n===================================",
+      "【ヤフープレミアムハンター】\nヤフーショッピング取得終了しました。\n終了時間："+strTime+"\n候補商品 約" + cand.to_s + "件ヒット。\n検索URL: " + account.amazon_url + "\n===================================",
       account.cw_api_token,
       account.cw_room_id
     )

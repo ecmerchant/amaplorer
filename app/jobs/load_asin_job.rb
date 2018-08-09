@@ -93,8 +93,6 @@ class LoadAsinJob < ApplicationJob
             break
           end
 
-
-
           asins.each do |temp_asin|
             #asin.push(temp_asin)
             tag = temp_asin.to_s
@@ -118,7 +116,7 @@ class LoadAsinJob < ApplicationJob
               end
             end
           end
-          account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+          account.update(asin_status: "実行中")
           #Product.import asin_list
         rescue => e
           logger.debug("エラーあり")
@@ -157,7 +155,7 @@ class LoadAsinJob < ApplicationJob
           end
         end
       end
-      account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+      account.update(asin_status: "実行中")
     end
 
     Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
@@ -169,11 +167,11 @@ class LoadAsinJob < ApplicationJob
     GC.start
 
     logger.debug('======= GET ASIN END =========')
-    account.update(asin_status: "完了 " + ecounter.to_s + "件済")
+    account.update(asin_status: "完了")
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
     account.msend(
-      "【ヤフープレミアムハンター】\nASIN取得完了しました。" + ecounter.to_s +  "件取得。\n終了時間："+strTime,
+      "【ヤフープレミアムハンター】\nASIN取得完了しました。\n終了時間："+strTime,
       account.cw_api_token,
       account.cw_room_id
     )
