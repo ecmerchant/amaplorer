@@ -133,7 +133,9 @@ class LoadAsinJob < ApplicationJob
       logger.debug('条件:ファイル')
       arg3.each do |row|
         logger.debug(row[0])
-        asin.push(row[0].to_s.gsub("\n","").strip())
+        if row[0] != nil then
+          asin.push(row[0].to_s.gsub("\n","").strip())
+        end
       end
       counter = 0
       asin.each do |tasin|
