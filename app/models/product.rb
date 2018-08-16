@@ -378,8 +378,12 @@ class Product < ApplicationRecord
           url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
         else
           query = title
-          query = URI.escape(query)
-          url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
+          if query != nil then
+            query = URI.escape(query)
+            url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
+          else
+            url = endpoint + '&query=' + query.to_s + '&price_from=' + lp.to_s
+          end
         end
       end
 
