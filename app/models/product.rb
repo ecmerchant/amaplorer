@@ -75,8 +75,8 @@ class Product < ApplicationRecord
 
       #MWSにアクセス
       mp = "A1VC38T7YXB528"
-      sid = account.seller_id
-      auth = account.mws_auth_token
+      sid = account.seller_id.strip
+      auth = account.mws_auth_token.strip
       client = MWS.products(
         primary_marketplace_id: mp,
         merchant_id: sid,

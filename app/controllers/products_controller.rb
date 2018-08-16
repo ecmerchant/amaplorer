@@ -145,6 +145,7 @@ class ProductsController < ApplicationController
         head 304   # 200を返す
       end
     end
+    redirect_to products_top_path
   end
 
   def regist
@@ -164,6 +165,7 @@ class ProductsController < ApplicationController
       tuser.update(user_level: ulevel)
       logger.debug("====== Regist from Form End =======")
     end
+    redirect_to products_top_path
   end
 
   def get_amazon
