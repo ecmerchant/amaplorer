@@ -20,140 +20,174 @@ class Product < ApplicationRecord
       account.cw_api_token,
       account.cw_room_id
     )
+    begin
 
-    Amazon::Ecs.configure do |options|
-      options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
-      options[:AWS_secret_key] = ENV['PA_AWS_SECRET_KEY_ID']
-      options[:associate_tag] = ENV['PA_ASSOCIATE_TAG']
-    end
-
-    target = Product.where(user:user, unique_id:uid)
-    orgasins = target.group(:asin).pluck(:asin)
-
-    maxnum = orgasins.length
-
-    orgasins.each_slice(10) do |arr|
-      logger.debug("\n======START=========")
-      asins = arr
-      logger.debug("\n\n")
-      logger.debug(asins)
-      logger.debug("\n\n")
-      res = nil
-      logger.debug("===== PAAPI =======")
-      rcounter = 0
-      Retryable.retryable(tries: 10, sleep: 2.0) do
-        res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
-        rcounter += 1
-        sleep(rcounter)
-        logger.debug(res.error)
+      Amazon::Ecs.configure do |options|
+        options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
+        options[:AWS_secret_key] = ENV['PA_AWS_SECRET_KEY_ID']
+        options[:associate_tag] = ENV['PA_ASSOCIATE_TAG']
       end
-      counter = 0
-      res.items.each do |item|
-        logger.debug(counter)
-        asin = item.get('ASIN')
-        logger.debug(asin)
-        title = item.get('ItemAttributes/Title')
-        logger.debug(title)
-        jan = item.get('ItemAttributes/EAN')
-        logger.debug(jan)
-        mpn = item.get('ItemAttributes/MPN')
-        logger.debug(mpn)
-        image = item.get('SmallImage/URL')
-        logger.debug(image)
-        if image == nil || image == "" then
-          logger.debug("image is nothing")
-          image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
+
+      target = Product.where(user:user, unique_id:uid)
+      orgasins = target.group(:asin).pluck(:asin)
+
+      maxnum = orgasins.length
+
+      orgasins.each_slice(10) do |arr|
+        logger.debug("\n======START=========")
+        asins = arr
+        logger.debug("\n\n")
+        logger.debug(asins)
+        logger.debug("\n\n")
+        res = nil
+        logger.debug("===== PAAPI =======")
+        rcounter = 0
+        Retryable.retryable(tries: 10, sleep: 2.0) do
+          res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
+          rcounter += 1
+          sleep(rcounter)
+          logger.debug(res.error)
+        end
+        counter = 0
+        res.items.each do |item|
+          logger.debug(counter)
+          asin = item.get('ASIN')
+          logger.debug(asin)
+          title = item.get('ItemAttributes/Title')
+          logger.debug(title)
+          jan = item.get('ItemAttributes/EAN')
+          logger.debug(jan)
+          mpn = item.get('ItemAttributes/MPN')
+          logger.debug(mpn)
+          image = item.get('SmallImage/URL')
+          logger.debug(image)
           if image == nil || image == "" then
-            logger.debug("image is nothing 2")
-            image = item.get('ImageSets/ImageSet/SmallImage/URL')
+            logger.debug("image is nothing")
+            image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
+            if image == nil || image == "" then
+              logger.debug("image is nothing 2")
+              image = item.get('ImageSets/ImageSet/SmallImage/URL')
+            end
+          end
+          temp = target.find_or_create_by(asin: asin)
+          temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
+          counter += 1
+        end
+
+        #MWSにアクセス
+        mp = "A1VC38T7YXB528"
+        sid = account.seller_id.strip
+        auth = account.mws_auth_token.strip
+        client = MWS.products(
+          primary_marketplace_id: mp,
+          merchant_id: sid,
+          auth_token: auth,
+          aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
+          aws_secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
+        )
+
+        logger.debug("get cart data")
+        logger.debug("===== CART PRICE =======")
+        logger.debug(asins)
+        response = client.get_competitive_pricing_for_asin(asins)
+        parser = response.parse
+        logger.debug(parser)
+
+        parser.each do |product|
+          logger.debug("===========")
+
+          vvv = false
+          if product.class == Array then
+            logger.debug("Product is Array")
+            #logger.debug(product)
+            ss = Hash.new
+            ss['Product'] = product[1]
+            product = nil
+            product = ss
+            #logger.debug(product)
+            vvv = true
+          end
+
+          asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+          logger.debug("===== cart price ====")
+          cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
+          logger.debug("===== cart ship ====")
+          cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
+          logger.debug("===== cart point ====")
+          cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
+          if cartprice == nil then
+            cartprice = 0
+          end
+          if cartship == nil then
+            cartship = 0
+          end
+          if cartpoint == nil then
+            cartpoint = 0
+          end
+          salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
+          logger.debug("===== sales rank ====")
+          if salesrank != nil then
+            if salesrank.class == Array then
+              category = salesrank.last.dig('ProductCategoryId')
+              rank = salesrank.last.dig('Rank')
+            else
+              category = salesrank.dig('ProductCategoryId')
+              rank = salesrank.dig('Rank')
+            end
+          else
+            category = nil
+            rank = nil
+          end
+
+          temp = target.find_or_create_by(asin: asin)
+          temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
+          if vvv == true then
+            break
           end
         end
-        temp = target.find_or_create_by(asin: asin)
-        temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
-        counter += 1
-      end
 
-      #MWSにアクセス
-      mp = "A1VC38T7YXB528"
-      sid = account.seller_id.strip
-      auth = account.mws_auth_token.strip
-      client = MWS.products(
-        primary_marketplace_id: mp,
-        merchant_id: sid,
-        auth_token: auth,
-        aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
-        aws_secret_access_key: ENV['AWS_SECRET_ACCESS_KEY']
-      )
+        logger.debug("===== LOWEST NEW =======")
+        response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
+        parser = response.parse
 
-      logger.debug("get cart data")
-      logger.debug("===== CART PRICE =======")
-      logger.debug(asins)
-      response = client.get_competitive_pricing_for_asin(asins)
-      parser = response.parse
-      logger.debug(parser)
-
-      parser.each do |product|
-        logger.debug("===========")
-
-        vvv = false
-        if product.class == Array then
-          logger.debug("Product is Array")
-          #logger.debug(product)
-          ss = Hash.new
-          ss['Product'] = product[1]
-          product = nil
-          product = ss
-          #logger.debug(product)
-          vvv = true
-        end
-
-        asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
-        logger.debug("===== cart price ====")
-        cartprice = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' ,'Price', 'ListingPrice','Amount')
-        logger.debug("===== cart ship ====")
-        cartship = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Shipping','Amount')
-        logger.debug("===== cart point ====")
-        cartpoint = product.dig('Product', 'CompetitivePricing', 'CompetitivePrices','CompetitivePrice' , 'Price', 'Points','PointsNumber')
-        if cartprice == nil then
-          cartprice = 0
-        end
-        if cartship == nil then
-          cartship = 0
-        end
-        if cartpoint == nil then
-          cartpoint = 0
-        end
-        salesrank = product.dig('Product', 'SalesRankings', 'SalesRank')
-        logger.debug("===== sales rank ====")
-        if salesrank != nil then
-          if salesrank.class == Array then
-            category = salesrank.last.dig('ProductCategoryId')
-            rank = salesrank.last.dig('Rank')
-          else
-            category = salesrank.dig('ProductCategoryId')
-            rank = salesrank.dig('Rank')
+        if parser.class == Array then
+          parser.each do |product|
+            asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+            logger.debug("===== asin =======\n" + asin)
+            buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
+            lowestprice = 0
+            lowestship = 0
+            lowestpoint = 0
+            logger.debug("===== buf =======\n")
+            #logger.debug(buf)
+            if buf != nil then
+              logger.debug(buf.length)
+              lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
+              lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
+              lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
+              if lowestpoint == nil then
+                lowestpoint = 0
+              end
+              if lowestship == nil then
+                lowestship = 0
+              end
+              if lowestprice == nil then
+                lowestprice = 0
+              end
+            else
+              lowestprice = 0
+              lowestship = 0
+              lowestpoint = 0
+            end
+            temp = target.find_or_create_by(asin: asin)
+            ecounter += 1
+            temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
           end
         else
-          category = nil
-          rank = nil
-        end
-
-        temp = target.find_or_create_by(asin: asin)
-        temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
-        if vvv == true then
-          break
-        end
-      end
-
-      logger.debug("===== LOWEST NEW =======")
-      response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
-      parser = response.parse
-
-      if parser.class == Array then
-        parser.each do |product|
-          asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
+          logger.debug("===== ONE ASIN =======\n")
+          asin = parser.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
           logger.debug("===== asin =======\n" + asin)
-          buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
+          buf = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
           lowestprice = 0
           lowestship = 0
           lowestpoint = 0
@@ -161,9 +195,9 @@ class Product < ApplicationRecord
           #logger.debug(buf)
           if buf != nil then
             logger.debug(buf.length)
-            lowestprice = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
-            lowestship = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
-            lowestpoint = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
+            lowestprice = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
+            lowestship = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
+            lowestpoint = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
             if lowestpoint == nil then
               lowestpoint = 0
             end
@@ -182,110 +216,87 @@ class Product < ApplicationRecord
           ecounter += 1
           temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
         end
-      else
-        logger.debug("===== ONE ASIN =======\n")
-        asin = parser.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
-        logger.debug("===== asin =======\n" + asin)
-        buf = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
-        lowestprice = 0
-        lowestship = 0
-        lowestpoint = 0
-        logger.debug("===== buf =======\n")
-        #logger.debug(buf)
-        if buf != nil then
-          logger.debug(buf.length)
-          lowestprice = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'ListingPrice','Amount')
-          lowestship = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0,'Price', 'Shipping','Amount')
-          lowestpoint = parser.dig('Product', 'LowestOfferListings', 'LowestOfferListing', 0, 'Price', 'Points','PointsNumber')
-          if lowestpoint == nil then
-            lowestpoint = 0
-          end
-          if lowestship == nil then
-            lowestship = 0
-          end
-          if lowestprice == nil then
-            lowestprice = 0
-          end
-        else
-          lowestprice = 0
-          lowestship = 0
-          lowestpoint = 0
+
+        requests = []
+        i = 0
+
+        asins.each do |asin|
+          prices = {
+            ListingPrice: { Amount: 1000, CurrencyCode: "JPY", }
+          }
+          request = {
+            MarketplaceId: "A1VC38T7YXB528",
+            IdType: "ASIN",
+            IdValue: asin,
+            PriceToEstimateFees: prices,
+            Identifier: "req" + i.to_s,
+            IsAmazonFulfilled: true
+          }
+          requests[i] = request
+          i += 1
         end
-        temp = target.find_or_create_by(asin: asin)
-        ecounter += 1
-        temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
-      end
 
-      requests = []
-      i = 0
+        logger.debug("===== FEES ESTIMATE =======")
+        response = client.get_my_fees_estimate(requests)
+        parser = response.parse
 
-      asins.each do |asin|
-        prices = {
-          ListingPrice: { Amount: 1000, CurrencyCode: "JPY", }
-        }
-        request = {
-          MarketplaceId: "A1VC38T7YXB528",
-          IdType: "ASIN",
-          IdValue: asin,
-          PriceToEstimateFees: prices,
-          Identifier: "req" + i.to_s,
-          IsAmazonFulfilled: true
-        }
-        requests[i] = request
-        i += 1
-      end
+        doc2 = Nokogiri::XML(response.body)
+        doc2.remove_namespaces!
 
-      logger.debug("===== FEES ESTIMATE =======")
-      response = client.get_my_fees_estimate(requests)
-      parser = response.parse
+        asins.each do |asin|
+          fee = 0
+          temp2 = doc2.xpath("//FeesEstimateResult")
 
-      doc2 = Nokogiri::XML(response.body)
-      doc2.remove_namespaces!
-
-      asins.each do |asin|
-        fee = 0
-        temp2 = doc2.xpath("//FeesEstimateResult")
-
-        for tt in temp2
-          casin = tt.xpath("FeesEstimateIdentifier/IdValue")[0].text
-          if casin == asin then
-            tfee = tt.xpath("FeesEstimate/FeeDetailList/FeeDetail/FeeAmount/Amount")[0]
-            if tfee != nil then
-              fee = tfee.text
-              totalfee = tt.xpath("FeesEstimate/TotalFeesEstimate/Amount")
-              if totalfee != nil then
-                totalfee = totalfee.text
-                logger.debug(totalfee)
+          for tt in temp2
+            casin = tt.xpath("FeesEstimateIdentifier/IdValue")[0].text
+            if casin == asin then
+              tfee = tt.xpath("FeesEstimate/FeeDetailList/FeeDetail/FeeAmount/Amount")[0]
+              if tfee != nil then
+                fee = tfee.text
+                totalfee = tt.xpath("FeesEstimate/TotalFeesEstimate/Amount")
+                if totalfee != nil then
+                  totalfee = totalfee.text
+                  logger.debug(totalfee)
+                end
+                break
               end
-              break
             end
           end
-        end
-        logger.debug("\n======FEE=========")
+          logger.debug("\n======FEE=========")
 
-        fbafee = totalfee.to_i - fee.to_i
-        fee = fee.to_f / 1000
-        logger.debug(fee)
-        logger.debug(fbafee)
-        if fee == 0 then
-          fee = 0.15
-        end
-        if fba_fee == 0 then
-          fbafee = 500
-        end
+          fbafee = totalfee.to_i - fee.to_i
+          fee = fee.to_f / 1000
+          logger.debug(fee)
+          logger.debug(fbafee)
+          if fee == 0 then
+            fee = 0.15
+          end
+          if fba_fee == 0 then
+            fbafee = 500
+          end
 
-        temp = target.find_or_create_by(asin: asin)
-        temp.update(amazon_fee: fee, fba_fee: fbafee)
+          temp = target.find_or_create_by(asin: asin)
+          temp.update(amazon_fee: fee, fba_fee: fbafee)
+        end
+        account.update(amazon_status: "実行中 " + ((ecounter.to_f / maxnum.to_f)*100).round.to_s + "%")
+        logger.debug(ecounter.to_i)
+        logger.debug("実行中 " + ((ecounter.to_i / maxnum.to_i)*100).round.to_s + "%")
+        #メモリ開放用
+        logger.debug("\n====== GC START =========")
+        ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+        GC.start
+        logger.debug("\n======END=========")
       end
-      account.update(amazon_status: "実行中 " + ((ecounter.to_f / maxnum.to_f)*100).round.to_s + "%")
-      logger.debug(ecounter.to_i)
-      logger.debug("実行中 " + ((ecounter.to_i / maxnum.to_i)*100).round.to_s + "%")
-      #メモリ開放用
-      logger.debug("\n====== GC START =========")
-      ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
-      GC.start
-      logger.debug("\n======END=========")
+    rescue => e
+      t = Time.now
+      strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+      account.msend(
+        "【ヤフープレミアムハンター】\nエラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+        ENV['ADMIN_CW_API_TOKEN'],
+        ENV['ADMIN_CW_ROOM_ID']
+      )
     end
+
     account.update(amazon_status: "完了")
 
     t = Time.now

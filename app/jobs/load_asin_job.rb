@@ -8,12 +8,6 @@ class LoadAsinJob < ApplicationJob
     # Do something with the exception
     logger.debug("Standard Error Escape Active Job")
     logger.error exception
-    account = Account.find_by(user: user)
-    account.msend(
-      "【ヤフープレミアムハンター】\nエラー!!\nエラー内容:" + exception.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
-      ENV['ADMIN_CW_API_TOKEN'],
-      ENV['ADMIN_CW_ROOM_ID']
-    )
   end
 
   def perform(user, arg1, arg2, arg3, limitnum)
@@ -41,148 +35,159 @@ class LoadAsinJob < ApplicationJob
     user_agent = ua[rand(uanum)][0]
     logger.debug("user_agent:" + user_agent)
 
-    if condition == 'from_url' then
-      #ASINの入力方法:URLの場合
-      logger.debug('条件：URL')
-      org_url = arg2
-      #asin = Array.new
-      #URLからASINリストの作成
-      loop do
-        begin
-          url = org_url + '&page=' + i.to_s
-          logger.debug("URL：" + url)
-          sleep(1.1)
-          cc = 0
+    begin
+
+      if condition == 'from_url' then
+        #ASINの入力方法:URLの場合
+        logger.debug('条件：URL')
+        org_url = arg2
+        #asin = Array.new
+        #URLからASINリストの作成
+        loop do
           begin
-            html = open(url, "User-Agent" => user_agent) do |f|
-              charset = f.charset
-              f.read # htmlを読み込んで変数htmlに渡す
-            end
-          rescue OpenURI::HTTPError => error
-            response = error.io
-            logger.debug("\nNo." + i.to_s + "\n")
-            logger.debug("error!!\n")
-            logger.debug(error)
+            url = org_url + '&page=' + i.to_s
+            logger.debug("URL：" + url)
+            sleep(1.1)
+            cc = 0
+            begin
+              html = open(url, "User-Agent" => user_agent) do |f|
+                charset = f.charset
+                f.read # htmlを読み込んで変数htmlに渡す
+              end
+            rescue OpenURI::HTTPError => error
+              response = error.io
+              logger.debug("\nNo." + i.to_s + "\n")
+              logger.debug("error!!\n")
+              logger.debug(error)
 
-            ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
-            uanum = ua.length
-            user_agent = ua[rand(uanum)][0]
-            logger.debug("user_agent:" + user_agent)
-            sleep(2.0 * (cc + 1))
-            cc += 1
-            retry if cc < upto
-            next
-          end
-
-          doc = Nokogiri::HTML.parse(html, nil)
-          asins = doc.css('li/@data-asin')
-
-          #終了条件2：ASINがヒットしない
-          if asins.count == 0 then
-            logger.debug("ASINなし")
-            break
-          end
-
-          #終了条件1：検索結果がヒットしない
-          #hbody = html.force_encoding("UTF-8")
-          #rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
-          rnum = html.match(/<span id="s-result-count">([\s\S]*?)</)
-          logger.debug("==========================")
-          if rnum != nil then
-            logger.debug(rnum[1])
-          end
-          logger.debug("==========================")
-
-          #if hbody.include?("0件の検索結果") then
-          if html.include?("0件の検索結果") then
-            logger.debug("検索結果なし")
-            break
-          end
-
-          asins.each do |temp_asin|
-            #asin.push(temp_asin)
-            tag = temp_asin.to_s
-
-            if casins.key?(tag) == false then
-              asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
-              casins[tag] = ecounter
-              ecounter += 1
+              ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
+              uanum = ua.length
+              user_agent = ua[rand(uanum)][0]
+              logger.debug("user_agent:" + user_agent)
+              sleep(2.0 * (cc + 1))
+              cc += 1
+              retry if cc < upto
+              next
             end
 
-            logger.debug(tag)
-            #asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
-            #asin_list << Product.new(asin:tag)
-            #temp = tproduct.find_or_create_by(asin:tag)
-            #temp.update(unique_id: uid, isvalid: true)
+            doc = Nokogiri::HTML.parse(html, nil)
+            asins = doc.css('li/@data-asin')
 
-            if ulevel == "trial" then
-              counter += 1
-              if counter > limitnum then
-                break
+            #終了条件2：ASINがヒットしない
+            if asins.count == 0 then
+              logger.debug("ASINなし")
+              break
+            end
+
+            #終了条件1：検索結果がヒットしない
+            #hbody = html.force_encoding("UTF-8")
+            #rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
+            rnum = html.match(/<span id="s-result-count">([\s\S]*?)</)
+            logger.debug("==========================")
+            if rnum != nil then
+              logger.debug(rnum[1])
+            end
+            logger.debug("==========================")
+
+            #if hbody.include?("0件の検索結果") then
+            if html.include?("0件の検索結果") then
+              logger.debug("検索結果なし")
+              break
+            end
+
+            asins.each do |temp_asin|
+              #asin.push(temp_asin)
+              tag = temp_asin.to_s
+
+              if casins.key?(tag) == false then
+                asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+                casins[tag] = ecounter
+                ecounter += 1
+              end
+
+              logger.debug(tag)
+              #asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+              #asin_list << Product.new(asin:tag)
+              #temp = tproduct.find_or_create_by(asin:tag)
+              #temp.update(unique_id: uid, isvalid: true)
+
+              if ulevel == "trial" then
+                counter += 1
+                if counter > limitnum then
+                  break
+                end
               end
             end
-          end
-          account.update(asin_status: "実行中")
-          #Product.import asin_list
-        rescue => e
-          logger.debug("エラーあり")
-          logger.debug(e)
-          break
-        end
-        doc = nil
-        asins = nil
-        i += 1
-      end
-    elsif condition == 'from_file' then
-      #ASINの入力方法:ファイルからの場合
-      asin = Array.new
-      logger.debug('条件:ファイル')
-      arg3.each do |row|
-        logger.debug(row[0])
-        if row[0] != nil then
-          asin.push(row[0].to_s.gsub("\n","").strip())
-        end
-      end
-      counter = 0
-      asin.each do |tasin|
-        tag = tasin.to_s
-        logger.debug(tag)
-        if casins.key?(tag) == false then
-          asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
-          casins[tag] = ecounter
-          ecounter += 1
-        end
-        #temp = tproduct.find_or_create_by(asin:tag)
-        #ecounter += 1
-        #temp.update(unique_id: uid, isvalid: true)
-
-        if ulevel == "trial" then
-          counter += 1
-          if counter > limitnum then
+            account.update(asin_status: "実行中")
+            #Product.import asin_list
+          rescue => e
+            logger.debug("エラーあり")
+            logger.debug(e)
             break
           end
+          doc = nil
+          asins = nil
+          i += 1
         end
+      elsif condition == 'from_file' then
+        #ASINの入力方法:ファイルからの場合
+        asin = Array.new
+        logger.debug('条件:ファイル')
+        arg3.each do |row|
+          logger.debug(row[0])
+          if row[0] != nil then
+            asin.push(row[0].to_s.gsub("\n","").strip())
+          end
+        end
+        counter = 0
+        asin.each do |tasin|
+          tag = tasin.to_s
+          logger.debug(tag)
+          if casins.key?(tag) == false then
+            asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+            casins[tag] = ecounter
+            ecounter += 1
+          end
+          #temp = tproduct.find_or_create_by(asin:tag)
+          #ecounter += 1
+          #temp.update(unique_id: uid, isvalid: true)
+
+          if ulevel == "trial" then
+            counter += 1
+            if counter > limitnum then
+              break
+            end
+          end
+        end
+        account.update(asin_status: "実行中")
       end
-      account.update(asin_status: "実行中")
+
+      Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
+      asin_list = nil
+      casins = nil
+      #メモリ開放用
+      logger.debug("\n====== GC START =========")
+      ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+      GC.start
+
+      logger.debug('======= GET ASIN END =========')
+      account.update(asin_status: "完了")
+      t = Time.now
+      strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+      account.msend(
+        "【ヤフープレミアムハンター】\nASIN取得完了しました。\n終了時間："+strTime,
+        account.cw_api_token,
+        account.cw_room_id
+      )
+    rescue => e
+      t = Time.now
+      strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+      account.msend(
+        "【ヤフープレミアムハンター】\nエラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+        ENV['ADMIN_CW_API_TOKEN'],
+        ENV['ADMIN_CW_ROOM_ID']
+      )
     end
-
-    Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
-    asin_list = nil
-    casins = nil
-    #メモリ開放用
-    logger.debug("\n====== GC START =========")
-    ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
-    GC.start
-
-    logger.debug('======= GET ASIN END =========')
-    account.update(asin_status: "完了")
-    t = Time.now
-    strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-    account.msend(
-      "【ヤフープレミアムハンター】\nASIN取得完了しました。\n終了時間："+strTime,
-      account.cw_api_token,
-      account.cw_room_id
-    )
 
     a = Product.new
     #メモリ開放用
