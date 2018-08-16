@@ -8,6 +8,12 @@ class LoadAsinJob < ApplicationJob
     # Do something with the exception
     logger.debug("Standard Error Escape Active Job")
     logger.error exception
+    account = Account.find_by(user: user)
+    account.msend(
+      "【ヤフープレミアムハンター】\nエラー!!\nエラー内容:" + exception.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+      ENV['ADMIN_CW_API_TOKEN'],
+      ENV['ADMIN_CW_ROOM_ID']
+    )
   end
 
   def perform(user, arg1, arg2, arg3, limitnum)
