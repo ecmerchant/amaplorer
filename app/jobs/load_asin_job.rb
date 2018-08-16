@@ -183,7 +183,7 @@ class LoadAsinJob < ApplicationJob
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       account.msend(
-        "【ヤフープレミアムハンター】\nエラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
         ENV['ADMIN_CW_API_TOKEN'],
         ENV['ADMIN_CW_ROOM_ID']
       )
