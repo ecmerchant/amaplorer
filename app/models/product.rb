@@ -317,6 +317,8 @@ class Product < ApplicationRecord
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
 
+    affiliate = "http%3A%2F%2Fck.jp.ap.valuecommerce.com%2Fservlet%2Freferral%3Fsid%3D3143367%26pid%3D883269369%26vc_url%3D"
+
     maxnum = data.length
 
     account = Account.find_by(user: user)
@@ -329,7 +331,7 @@ class Product < ApplicationRecord
       skip = 5
     end
     logger.debug(skip)
-    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&condition=new'
+    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&affiliate_type=vc&affiliate_id=' + affiliate + '&condition=new&availability=1'
 
     cand = 0
     dd = 0
@@ -418,9 +420,13 @@ class Product < ApplicationRecord
 
         if temp != nil then
           logger.debug("==== Item Found =====")
-          page = temp.xpath('.//url').text
-          yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
-          yahoo_code = yahoo_code.gsub("/","_")
+          page = temp.xpath('.//url')[0].text
+          logger.debug(page)
+
+          #yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
+          #yahoo_code = yahoo_code.gsub("/","_")
+          yahoo_code = temp.xpath('.//code')[0].text
+          logger.debug(yahoo_code)
 
           #request2 = Typhoeus::Request.new(page)
           #request2.run
@@ -499,11 +505,12 @@ class Product < ApplicationRecord
             cand += 1
           end
 
-          temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+          temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         else
           logger.debug("==== Item NOT Found =====")
           temp = target.find_or_create_by(asin: asin)
           yahoo_title = "該当なし"
+          page = ""
           yahoo_price = 0
           yahoo_shipping = 0
           yahoo_code = nil
@@ -512,7 +519,7 @@ class Product < ApplicationRecord
           premium_point = 0
           softbank_point = 0
           profit = 0
-          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         end
       rescue => e
         logger.debug("Error!!\n")
@@ -533,13 +540,14 @@ class Product < ApplicationRecord
         yahoo_title = "商品情報なし"
         yahoo_price = 0
         yahoo_shipping = 0
+        page = ""
         yahoo_code = nil
         yahoo_image = nil
         normal_point = 0
         premium_point = 0
         softbank_point = 0
         profit = 0
-        temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+        temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
       end
       counter += 1
       ecounter += 1
