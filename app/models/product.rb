@@ -322,7 +322,23 @@ class Product < ApplicationRecord
     maxnum = data.length
 
     account = Account.find_by(user: user)
-    yahoo_appid = ENV['YAHOO_APPID']
+
+    yaid1 = ENV['YAHOO_APPID']
+    yaid2 = ENV['YAHOO_APPID2']
+    yaid3 = ENV['YAHOO_APPID3']
+
+    if yaid2 == nil then
+      yaid2 = yaid1
+    end
+
+    if yaid3 == nil then
+      yaid3 = yaid1
+    end
+
+    yaids = [yaid1, yaid2, yaid3]
+
+    #yahoo_appid = ENV['YAHOO_APPID']
+    yahoo_appid = yaids.sample
     account.update(yahoo_status: "実行中")
     interval = ENV['YAHOO_INTERVAL']
     skip = ENV['GC_INTERVAL']
