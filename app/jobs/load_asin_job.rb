@@ -74,9 +74,35 @@ class LoadAsinJob < ApplicationJob
             asins = doc.css('li/@data-asin')
 
             #終了条件2：ASINがヒットしない
-            if asins.count == 0 then
+            if html.include?("の検索に一致する商品はありませんでした") == false && asins.count == 0 then
+              user_agent = ua.sample
               logger.debug("ASINなし")
-              break
+              sleep(5)
+
+              t = Time.now
+              strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+              account.msend(
+                "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
+                ENV['ADMIN_CW_API_TOKEN'],
+                ENV['ADMIN_CW_ROOM_ID']
+              )
+
+              begin
+                html = open(url, "User-Agent" => user_agent) do |f|
+                  charset = f.charset
+                  f.read # htmlを読み込んで変数htmlに渡す
+                end
+              rescue OpenURI::HTTPError => error
+                response = error.io
+                logger.debug("\nNo." + i.to_s + "\n")
+                logger.debug("error!!")
+                logger.debug(error)
+                cc += 1
+                retry if cc < upto
+                next
+              end
+
+              #break
             end
 
             #終了条件1：検索結果がヒットしない
@@ -90,7 +116,7 @@ class LoadAsinJob < ApplicationJob
             logger.debug("==========================")
 
             #if hbody.include?("0件の検索結果") then
-            if html.include?("0件の検索結果") then
+            if html.include?("の検索に一致する商品はありませんでした") then
               logger.debug("検索結果なし")
               break
             end
@@ -162,46 +188,59 @@ class LoadAsinJob < ApplicationJob
         account.update(asin_status: "実行中")
       end
 
-      Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
-      asin_list = nil
-      casins = nil
-      #メモリ開放用
-      logger.debug("\n====== GC START =========")
-      ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
-      GC.start
+
 
       logger.debug('======= GET ASIN END =========')
-      account.update(asin_status: "完了")
-      t = Time.now
-      strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-      account.msend(
-        "【ヤフープレミアムハンター】\nASIN取得完了しました。\n終了時間："+strTime,
-        account.cw_api_token,
-        account.cw_room_id
-      )
+
+      if ecounter != 0 then
+        account.update(asin_status: "完了 約" + ecounter.to_s + "件済")
+
+        Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
+        asin_list = nil
+        casins = nil
+        #メモリ開放用
+        logger.debug("\n====== GC START =========")
+        ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
+        GC.start
+        
+        t = Time.now
+        strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+        account.msend(
+          "【ヤフープレミアムハンター】\nASIN取得完了しました。" + ecounter.to_s +  "件取得。\n終了時間："+strTime,
+          account.cw_api_token,
+          account.cw_room_id
+        )
+
+        a = Product.new
+        a.amazon(user, uid)
+        a.yahoo_shopping(user, uid)
+
+      else
+        account.update(asin_status: "ASIN取得失敗")
+        t = Time.now
+        strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+        account.msend(
+          "【ヤフープレミアムハンター】\nASIN取得失敗。\n終了時間："+strTime,
+          account.cw_api_token,
+          account.cw_room_id
+        )
+      end
+
     rescue => e
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       account.msend(
-        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n取得数:" + ecounter.to_s + "\n発生時間:" + strTime,
         ENV['ADMIN_CW_API_TOKEN'],
         ENV['ADMIN_CW_ROOM_ID']
       )
     end
 
-    a = Product.new
     #メモリ開放用
     logger.debug("\n====== GC START =========")
     ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
     GC.start
 
-    a.amazon(user, uid)
-    a.yahoo_shopping(user, uid)
-
-    #メモリ開放用
-    logger.debug("\n====== GC START =========")
-    ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
-    GC.start
     #GetItemDataJob.perform_later(current_user.email, uid)
   end
 end
