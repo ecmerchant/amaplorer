@@ -150,7 +150,8 @@ class LoadAsinJob < ApplicationJob
                 end
               end
             end
-            account.update(asin_status: "実行中")
+            #account.update(asin_status: "実行中")
+            account.update(asin_status: "実行中 約" + ecounter.to_s + "件済")
             #Product.import asin_list
           rescue => e
             logger.debug("エラーあり")
@@ -191,7 +192,8 @@ class LoadAsinJob < ApplicationJob
             end
           end
         end
-        account.update(asin_status: "実行中")
+        #account.update(asin_status: "実行中")
+        account.update(asin_status: "実行中 約" + ecounter.to_s + "件済")
       end
 
 

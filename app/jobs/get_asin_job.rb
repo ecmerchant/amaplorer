@@ -47,7 +47,7 @@ class GetAsinJob < ApplicationJob
       #URLからASINリストの作成
       loop do
         begin
-          if i > 400 then break end 
+          if i > 400 then break end
           url = org_url + '&page=' + i.to_s
           logger.debug("URL：" + url)
 
@@ -183,7 +183,7 @@ class GetAsinJob < ApplicationJob
           end
         end
       end
-      account.update(asin_status: "実行中 " + ecounter.to_s + "件済")
+      account.update(asin_status: "実行中 約" + ecounter.to_s + "件済")
     end
 
     logger.debug("\n====== GET ASIN END =========")
