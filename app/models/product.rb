@@ -316,7 +316,8 @@ class Product < ApplicationRecord
     logger.debug("\n====START YAHOO DATA=======")
     target = Product.where(user:user, unique_id:uid)
     data = target.group(:asin, :title, :jan, :mpn, :cart_price).pluck(:asin, :title, :jan, :mpn, :cart_price)
-
+    ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
+    uanum = ua.length
     affiliate = "http%3A%2F%2Fck.jp.ap.valuecommerce.com%2Fservlet%2Freferral%3Fsid%3D3143367%26pid%3D883269369%26vc_url%3D"
 
     maxnum = data.length
@@ -404,131 +405,159 @@ class Product < ApplicationRecord
           end
         end
       end
-
+      logger.debug("====Y query=====")
+      logger.debug(query)
+      logger.debug("=========")
       logger.debug(url)
       charset = nil
 
-      ua = CSV.read('app/others/User-Agent.csv', headers: false, col_sep: "\t")
-      uanum = ua.length
-      user_agent = ua[rand(uanum)][0]
+      if query != nil then
+        user_agent = ua.sample
+        sleep(interval)
+        cc = 0
+        begin
+          html = open(url, "User-Agent" => user_agent) do |f|
+            charset = f.charset
+            ss = f.status
+            logger.debug("==== HTTP STATUS 1 =====")
+            logger.debug(ss)
+            logger.debug("======================")
+            f.read # htmlを読み込んで変数htmlに渡す
+          end
 
-      sleep(interval)
-      cc = 0
-      begin
-        html = open(url, "User-Agent" => user_agent) do |f|
-          charset = f.charset
-          ss = f.status
-          logger.debug("==== HTTP STATUS 1 =====")
-          logger.debug(ss)
-          logger.debug("======================")
-          f.read # htmlを読み込んで変数htmlに渡す
-        end
+          doc = Nokogiri::HTML.parse(html, nil, charset)
 
-        doc = Nokogiri::HTML.parse(html, nil, charset)
+          logger.debug("==== HTTP ST =====")
+          logger.debug("==== HTTP EN =====")
 
-        logger.debug("==== HTTP ST =====")
-        logger.debug("==== HTTP EN =====")
+          temp = doc.xpath('//hit[@index="1"]')[0]
+          isvalid = false
 
-        temp = doc.xpath('//hit[@index="1"]')[0]
-        isvalid = false
+          logger.debug("==== Item Hit? =====")
 
-        logger.debug("==== Item Hit? =====")
+          if temp != nil then
+            logger.debug("==== Item Found =====")
+            page = temp.xpath('.//url')[0].text
+            logger.debug(page)
 
-        if temp != nil then
-          logger.debug("==== Item Found =====")
-          page = temp.xpath('.//url')[0].text
-          logger.debug(page)
+            #yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
+            #yahoo_code = yahoo_code.gsub("/","_")
+            yahoo_code = temp.xpath('.//code')[0].text
+            logger.debug(yahoo_code)
 
-          #yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
-          #yahoo_code = yahoo_code.gsub("/","_")
-          yahoo_code = temp.xpath('.//code')[0].text
-          logger.debug(yahoo_code)
+            #request2 = Typhoeus::Request.new(page)
+            #request2.run
+            #html2 = request2.response.body
 
-          #request2 = Typhoeus::Request.new(page)
-          #request2.run
-          #html2 = request2.response.body
+            yahoo_price = temp.xpath('.//price').text
 
-          yahoo_price = temp.xpath('.//price').text
+            logger.debug(yahoo_price)
 
-          logger.debug(yahoo_price)
-
-          yahoo_shipping = temp.xpath('.//shipping/code').text
-          logger.debug("yahoo_shipping")
-          logger.debug(yahoo_shipping)
-          if yahoo_shipping.to_i == 2 || yahoo_shipping.to_i == 3  then
-            yahoo_shipping = 0
-          else
-            yahoo_shipping = temp.xpath('.//shipping/name').text
-            logger.debug("yahoo_shipping_name")
+            yahoo_shipping = temp.xpath('.//shipping/code').text
+            logger.debug("yahoo_shipping")
             logger.debug(yahoo_shipping)
-            yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)
-            if yahoo_shipping != nil then
-              yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
-              yahoo_shipping = yahoo_shipping.gsub(",","")
-            else
+            if yahoo_shipping.to_i == 2 || yahoo_shipping.to_i == 3  then
               yahoo_shipping = 0
+            else
+              yahoo_shipping = temp.xpath('.//shipping/name').text
+              logger.debug("yahoo_shipping_name")
+              logger.debug(yahoo_shipping)
+              yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)
+              if yahoo_shipping != nil then
+                yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
+                yahoo_shipping = yahoo_shipping.gsub(",","")
+              else
+                yahoo_shipping = 0
+              end
             end
-          end
 
-          logger.debug(yahoo_shipping)
+            logger.debug(yahoo_shipping)
 
-          yahoo_title = temp.xpath('.//name').text
-          yahoo_image = temp.xpath('.//image/small').text
+            yahoo_title = temp.xpath('.//name').text
+            yahoo_image = temp.xpath('.//image/small').text
 
-          normal_point = 0
-          premium_point = 0
-          softbank_point = 0
-          logger.debug(yahoo_title)
+            normal_point = 0
+            premium_point = 0
+            softbank_point = 0
+            logger.debug(yahoo_title)
 
-          normal_point = temp.xpath('.//point/amount').text
-          premium_point = temp.xpath('.//point/premiumamount').text
-          softbank_point = (yahoo_price.to_f * 0.05).round
+            normal_point = temp.xpath('.//point/amount').text
+            premium_point = temp.xpath('.//point/premiumamount').text
+            softbank_point = (yahoo_price.to_f * 0.05).round
 
-          logger.debug("=== Points ====")
-          logger.debug(normal_point)
-          logger.debug(premium_point)
-          logger.debug(softbank_point)
+            logger.debug("=== Points ====")
+            logger.debug(normal_point)
+            logger.debug(premium_point)
+            logger.debug(softbank_point)
 
 
-          isvalid = true
-          temp = target.find_or_create_by(asin: asin)
+            isvalid = true
+            temp = target.find_or_create_by(asin: asin)
 
-          if temp.cart_price != 0 then
-            aprice = temp.cart_price.to_i + temp.cart_shipping.to_i
+            if temp.cart_price != 0 then
+              aprice = temp.cart_price.to_i + temp.cart_shipping.to_i
+            else
+              aprice = temp.lowest_price.to_i + temp.lowest_shipping.to_i
+            end
+
+            points = normal_point.to_f
+            if account.premium == true then
+              points = points + premium_point.to_f
+            end
+            if account.softbank == true then
+              points = points + softbank_point.to_f
+            end
+
+            logger.debug("==== profit Calc =====")
+            logger.debug(profit)
+            logger.debug("==== profit Calc end =====")
+
+            profit = (aprice - (aprice * temp.amazon_fee.to_f) - (yahoo_price.to_f - points + yahoo_shipping.to_f) - temp.fba_fee.to_f).to_i
+
+            logger.debug("==== profit =====")
+            logger.debug(profit)
+            logger.debug("==== profit end =====")
+
+            if profit > 0 then
+              cand += 1
+            end
+
+            temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
           else
-            aprice = temp.lowest_price.to_i + temp.lowest_shipping.to_i
+            logger.debug("==== Item NOT Found =====")
+            temp = target.find_or_create_by(asin: asin)
+            yahoo_title = "該当なし"
+            page = ""
+            yahoo_price = 0
+            yahoo_shipping = 0
+            yahoo_code = nil
+            yahoo_image = nil
+            normal_point = 0
+            premium_point = 0
+            softbank_point = 0
+            profit = 0
+            temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
           end
-
-          points = normal_point.to_f
-          if account.premium == true then
-            points = points + premium_point.to_f
-          end
-          if account.softbank == true then
-            points = points + softbank_point.to_f
-          end
-
-          logger.debug("==== profit Calc =====")
-          logger.debug(profit)
-          logger.debug("==== profit Calc end =====")
-
-          profit = (aprice - (aprice * temp.amazon_fee.to_f) - (yahoo_price.to_f - points + yahoo_shipping.to_f) - temp.fba_fee.to_f).to_i
-
-          logger.debug("==== profit =====")
-          logger.debug(profit)
-          logger.debug("==== profit end =====")
-
-          if profit > 0 then
-            cand += 1
-          end
-
-          temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
-        else
-          logger.debug("==== Item NOT Found =====")
+        rescue => e
+          logger.debug("Error!!\n")
+          cc += 1
+          retry if cc < upto
+          next
+          #logger.debug(ENV['ADMIN_CW_API_TOKEN'])
+          #logger.debug(ENV['ADMIN_CW_ROOM_ID'])
+          t = Time.now
+          strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+          account.msend(
+            "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\nASIN:" + asin.to_s + "\n発生時間:" + strTime,
+            ENV['ADMIN_CW_API_TOKEN'],
+            ENV['ADMIN_CW_ROOM_ID']
+          )
+          logger.debug("==== Item Error =====")
           temp = target.find_or_create_by(asin: asin)
-          yahoo_title = "該当なし"
-          page = ""
+          yahoo_title = "商品情報なし"
           yahoo_price = 0
           yahoo_shipping = 0
+          page = ""
           yahoo_code = nil
           yahoo_image = nil
           normal_point = 0
@@ -537,21 +566,8 @@ class Product < ApplicationRecord
           profit = 0
           temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
         end
-      rescue => e
-        logger.debug("Error!!\n")
-        cc += 1
-        retry if cc < upto
-        next
-        #logger.debug(ENV['ADMIN_CW_API_TOKEN'])
-        #logger.debug(ENV['ADMIN_CW_ROOM_ID'])
-        t = Time.now
-        strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-        account.msend(
-          "【ヤフープレミアムハンター】\nヤフーショッピング エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\nASIN:" + asin.to_s + "\n発生時間:" + strTime,
-          ENV['ADMIN_CW_API_TOKEN'],
-          ENV['ADMIN_CW_ROOM_ID']
-        )
-        logger.debug("==== Item Error =====")
+      else
+        logger.debug("==== Item NO QUERY =====")
         temp = target.find_or_create_by(asin: asin)
         yahoo_title = "商品情報なし"
         yahoo_price = 0
@@ -578,6 +594,7 @@ class Product < ApplicationRecord
         ecounter = 0
       end
     end
+
     logger.debug("\n====END YAHOO DATA=======")
     account.update(yahoo_status: "完了")
     t = Time.now
