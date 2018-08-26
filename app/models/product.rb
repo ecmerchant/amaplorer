@@ -310,6 +310,8 @@ class Product < ApplicationRecord
     logger.debug("\n====END AMAZON DATA=======")
   end
 
+
+
   def yahoo_shopping(user, uid)
     cc = 0
     upto = 3
@@ -412,10 +414,12 @@ class Product < ApplicationRecord
       charset = nil
 
       if query != nil then
-        user_agent = ua.sample
+        logger.debug("== query found ==")
+        user_agent = ua.sample[0]
         sleep(interval)
         cc = 0
         begin
+          logger.debug("== access ==")
           html = open(url, "User-Agent" => user_agent) do |f|
             charset = f.charset
             ss = f.status
@@ -426,9 +430,6 @@ class Product < ApplicationRecord
           end
 
           doc = Nokogiri::HTML.parse(html, nil, charset)
-
-          logger.debug("==== HTTP ST =====")
-          logger.debug("==== HTTP EN =====")
 
           temp = doc.xpath('//hit[@index="1"]')[0]
           isvalid = false
@@ -538,6 +539,7 @@ class Product < ApplicationRecord
             profit = 0
             temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
           end
+
         rescue => e
           logger.debug("Error!!\n")
           logger.debug(e)
