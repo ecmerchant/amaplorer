@@ -47,7 +47,7 @@ class GetAsinJob < ApplicationJob
       #URLからASINリストの作成
       loop do
         begin
-          if i > 400 then break
+          if i > 400 then break end 
           url = org_url + '&page=' + i.to_s
           logger.debug("URL：" + url)
 
