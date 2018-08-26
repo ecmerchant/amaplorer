@@ -47,6 +47,7 @@ class GetAsinJob < ApplicationJob
       #URLからASINリストの作成
       loop do
         begin
+          if i > 400 then break
           url = org_url + '&page=' + i.to_s
           logger.debug("URL：" + url)
 
@@ -113,6 +114,11 @@ class GetAsinJob < ApplicationJob
 
           if html.include?("の検索に一致する商品はありませんでした") then
             logger.debug("検索結果なし")
+            break
+          end
+
+          if html.include?("検索結果のベストマッチの終わりに達しました") then
+            logger.debug("検索終了")
             break
           end
 
@@ -208,6 +214,6 @@ class GetAsinJob < ApplicationJob
         account.cw_api_token,
         account.cw_room_id
       )
-    end 
+    end
   end
 end

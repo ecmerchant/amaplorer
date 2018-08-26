@@ -45,6 +45,7 @@ class LoadAsinJob < ApplicationJob
         #URLからASINリストの作成
         loop do
           begin
+            if i > 400 then break
             url = org_url + '&page=' + i.to_s
             logger.debug("URL：" + url)
             sleep(1.1)
@@ -118,6 +119,11 @@ class LoadAsinJob < ApplicationJob
             #if hbody.include?("0件の検索結果") then
             if html.include?("の検索に一致する商品はありませんでした") then
               logger.debug("検索結果なし")
+              break
+            end
+
+            if html.include?("検索結果のベストマッチの終わりに達しました") then
+              logger.debug("検索終了")
               break
             end
 
@@ -202,7 +208,7 @@ class LoadAsinJob < ApplicationJob
         logger.debug("\n====== GC START =========")
         ObjectSpace.each_object(ActiveRecord::Relation).each(&:reset)
         GC.start
-        
+
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(

@@ -540,6 +540,7 @@ class Product < ApplicationRecord
           end
         rescue => e
           logger.debug("Error!!\n")
+          logger.debug(e)
           cc += 1
           retry if cc < upto
           next
