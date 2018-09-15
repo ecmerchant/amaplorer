@@ -168,6 +168,24 @@ class ProductsController < ApplicationController
     redirect_to products_top_path
   end
 
+  def list
+    @login_user = current_user
+    @account = Account.find_by(user: current_user.email)
+    temp = Product.where(user: current_user.email, listing: true)
+    @products = temp
+    respond_to do |format|
+      format.html do
+
+      end
+      format.csv do
+        tt = Time.now
+        strTime = tt.strftime("%Y%m%D%H%M%S")
+        fname = "出品リスト_" + strTime + ".csv"
+        send_data render_to_string, filename: fname, type: :csv
+      end
+    end
+  end
+
   def get_amazon
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id

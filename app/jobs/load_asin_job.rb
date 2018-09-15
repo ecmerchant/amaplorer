@@ -36,7 +36,6 @@ class LoadAsinJob < ApplicationJob
     logger.debug("user_agent:" + user_agent)
 
     begin
-
       if condition == 'from_url' then
         #ASINの入力方法:URLの場合
         logger.debug('条件：URL')
@@ -56,7 +55,6 @@ class LoadAsinJob < ApplicationJob
                 f.read # htmlを読み込んで変数htmlに渡す
               end
             rescue OpenURI::HTTPError => error
-              response = error.io
               logger.debug("\nNo." + i.to_s + "\n")
               logger.debug("error!!\n")
               logger.debug(error)
@@ -78,24 +76,21 @@ class LoadAsinJob < ApplicationJob
               logger.debug("ASINなし")
               sleep(5)
 
-              t = Time.now
-              strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-              account.msend(
-                "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
-                ENV['ADMIN_CW_API_TOKEN'],
-                ENV['ADMIN_CW_ROOM_ID']
-              )
-
               begin
                 html = open(url, "User-Agent" => user_agent) do |f|
                   charset = f.charset
                   f.read # htmlを読み込んで変数htmlに渡す
                 end
               rescue OpenURI::HTTPError => error
-                response = error.io
                 logger.debug("\nNo." + i.to_s + "\n")
-                logger.debug("error!!")
                 logger.debug(error)
+                t = Time.now
+                strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+                account.msend(
+                  "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
+                  ENV['ADMIN_CW_API_TOKEN'],
+                  ENV['ADMIN_CW_ROOM_ID']
+                )
                 cc += 1
                 retry if cc < upto
                 next
@@ -166,8 +161,10 @@ class LoadAsinJob < ApplicationJob
         logger.debug('条件:ファイル')
         arg3.each do |row|
           logger.debug(row[0])
-          if row[0] != nil then
-            asin.push(row[0].to_s.gsub("\n","").strip())
+          trow = row[0].to_s
+          trow = trow.gsub("\n","").strip()
+          if trow != nil && trow.length == 10 then
+            asin.push(trow)
           end
         end
         counter = 0
@@ -226,7 +223,7 @@ class LoadAsinJob < ApplicationJob
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
         account.msend(
-          "【ヤフープレミアムハンター】\nASIN取得失敗。\n終了時間："+strTime,
+          "【ヤフープレミアムハンター】\nASIN取得失敗。\n終了時間："+ strTime ,
           account.cw_api_token,
           account.cw_room_id
         )
@@ -236,7 +233,7 @@ class LoadAsinJob < ApplicationJob
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       account.msend(
-        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n取得数:" + ecounter.to_s + "\n発生時間:" + strTime,
+        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n取得数:" + ecounter.to_s + "\n発生時間:" + strTime,
         ENV['ADMIN_CW_API_TOKEN'],
         ENV['ADMIN_CW_ROOM_ID']
       )
