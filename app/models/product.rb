@@ -69,9 +69,11 @@ class Product < ApplicationRecord
               image = item.get('ImageSets/ImageSet/SmallImage/URL')
             end
           end
-          temp = target.find_or_create_by(asin: asin)
-          temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
-          counter += 1
+          temp = target.find_by(asin: asin)
+          if temp != nil then
+            temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
+            counter += 1
+          end
         end
 
         #MWSにアクセス
@@ -139,8 +141,10 @@ class Product < ApplicationRecord
             rank = nil
           end
 
-          temp = target.find_or_create_by(asin: asin)
-          temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
+          temp = target.find_by(asin: asin)
+          if temp != nil then
+            temp.update(cart_price: cartprice, cart_shipping: cartship, cart_point: cartpoint, category: category, rank: rank)
+          end
           if vvv == true then
             break
           end
@@ -212,9 +216,11 @@ class Product < ApplicationRecord
             lowestship = 0
             lowestpoint = 0
           end
-          temp = target.find_or_create_by(asin: asin)
+          temp = target.find_by(asin: asin)
           ecounter += 1
-          temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+          if temp != nil then
+            temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+          end
         end
 
         requests = []
@@ -275,8 +281,10 @@ class Product < ApplicationRecord
             fbafee = 500
           end
 
-          temp = target.find_or_create_by(asin: asin)
-          temp.update(amazon_fee: fee, fba_fee: fbafee)
+          temp = target.find_by(asin: asin)
+          if temp != nil then
+            temp.update(amazon_fee: fee, fba_fee: fbafee)
+          end
         end
         account.update(amazon_status: "実行中 " + ((ecounter.to_f / maxnum.to_f)*100).round.to_s + "%")
         logger.debug(ecounter.to_i)
