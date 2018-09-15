@@ -183,7 +183,7 @@ class Product < ApplicationRecord
               lowestship = 0
               lowestpoint = 0
             end
-            temp = target.find_or_create_by(asin: asin)
+            temp = target.find_by(asin: asin)
             ecounter += 1
             temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
           end
@@ -501,7 +501,7 @@ class Product < ApplicationRecord
 
 
             isvalid = true
-            temp = target.find_or_create_by(asin: asin)
+            temp = target.find_by(asin: asin)
 
             if temp.cart_price != 0 then
               aprice = temp.cart_price.to_i + temp.cart_shipping.to_i
@@ -534,7 +534,7 @@ class Product < ApplicationRecord
             temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
           else
             logger.debug("==== Item NOT Found =====")
-            temp = target.find_or_create_by(asin: asin)
+            temp = target.find_by(asin: asin)
             yahoo_title = "該当なし"
             page = ""
             yahoo_price = 0
@@ -564,7 +564,7 @@ class Product < ApplicationRecord
             ENV['ADMIN_CW_ROOM_ID']
           )
           logger.debug("==== Item Error =====")
-          temp = target.find_or_create_by(asin: asin)
+          temp = target.find_by(asin: asin)
           yahoo_title = "商品情報なし"
           yahoo_price = 0
           yahoo_shipping = 0
@@ -579,7 +579,7 @@ class Product < ApplicationRecord
         end
       else
         logger.debug("==== Item NO QUERY =====")
-        temp = target.find_or_create_by(asin: asin)
+        temp = target.find_by(asin: asin)
         yahoo_title = "商品情報なし"
         yahoo_price = 0
         yahoo_shipping = 0

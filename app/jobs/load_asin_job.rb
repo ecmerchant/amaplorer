@@ -190,9 +190,6 @@ class LoadAsinJob < ApplicationJob
         #account.update(asin_status: "実行中")
         account.update(asin_status: "実行中 約" + ecounter.to_s + "件済")
       end
-
-
-
       logger.debug('======= GET ASIN END =========')
 
       if ecounter != 0 then
