@@ -45,7 +45,7 @@ class Product < ApplicationRecord
         Retryable.retryable(tries: 10, sleep: 2.0) do
           res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
           rcounter += 1
-          sleep(rcounter)
+          sleep(rcounter*5)
           logger.debug(res.error)
         end
         counter = 0
@@ -532,8 +532,9 @@ class Product < ApplicationRecord
             if profit > 0 then
               cand += 1
             end
-
-            temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+            if temp != nil then
+              temp.update(isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+            end
           else
             logger.debug("==== Item NOT Found =====")
             temp = target.find_by(asin: asin)
@@ -547,7 +548,9 @@ class Product < ApplicationRecord
             premium_point = 0
             softbank_point = 0
             profit = 0
-            temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+            if temp != nil then
+              temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+            end
           end
 
         rescue => e
@@ -577,7 +580,9 @@ class Product < ApplicationRecord
           premium_point = 0
           softbank_point = 0
           profit = 0
-          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+          if temp != nil then
+            temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+          end
         end
       else
         logger.debug("==== Item NO QUERY =====")
@@ -592,7 +597,9 @@ class Product < ApplicationRecord
         premium_point = 0
         softbank_point = 0
         profit = 0
-        temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+        if temp != nil then
+          temp.update(listing: false, isvalid: isvalid, yahoo_title: yahoo_title, yahoo_url: page, yahoo_price: yahoo_price, yahoo_shipping: yahoo_shipping, yahoo_code: yahoo_code, yahoo_image: yahoo_image, normal_point: normal_point, premium_point: premium_point, softbank_point: softbank_point, profit: profit)
+        end
       end
       counter += 1
       ecounter += 1
