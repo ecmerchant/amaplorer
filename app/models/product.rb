@@ -157,7 +157,7 @@ class Product < ApplicationRecord
         if parser.class == Array then
           parser.each do |product|
             asin = product.dig('Product', 'Identifiers', 'MarketplaceASIN', 'ASIN')
-            logger.debug("===== asin =======\n" + asin)
+            logger.debug("===== asin =======\n" + asin.to_s)
             buf = product.dig('Product', 'LowestOfferListings', 'LowestOfferListing')
             lowestprice = 0
             lowestship = 0
