@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180819023135) do
+ActiveRecord::Schema.define(version: 20180916142106) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -31,6 +31,13 @@ ActiveRecord::Schema.define(version: 20180819023135) do
     t.string   "amazon_status"
     t.string   "yahoo_status"
     t.string   "amazon_url"
+  end
+
+  create_table "messengers", force: :cascade do |t|
+    t.string   "user"
+    t.text     "comment"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "products", force: :cascade do |t|

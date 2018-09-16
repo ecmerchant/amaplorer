@@ -20,6 +20,7 @@ class ProductsController < ApplicationController
     @login_user = current_user
     @account = Account.find_by(user: current_user.email)
     @limitnum = 19
+
     if @account != nil then
       uid = Account.find_by(user: current_user.email).unique_id
       @products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).where("profit > 0").order("profit DESC").limit(ENV['SHOW_NUM'])
@@ -57,6 +58,7 @@ class ProductsController < ApplicationController
     @account = Account.find_by(user: current_user.email)
     temp = Product.where(listing: true)
     @products = temp.order("RANDOM()").limit(6)
+    @comment = Messenger.order("created_at DESC").first(3)
   end
 
   def output
