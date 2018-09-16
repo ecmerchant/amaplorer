@@ -185,7 +185,9 @@ class Product < ApplicationRecord
             end
             temp = target.find_by(asin: asin)
             ecounter += 1
-            temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+            if temp != nil then
+              temp.update(lowest_price: lowestprice, lowest_shipping: lowestship, lowest_point: lowestpoint)
+            end
           end
         else
           logger.debug("===== ONE ASIN =======\n")
