@@ -501,7 +501,7 @@ class Product < ApplicationRecord
             if ENV['PREMIUM_TIMES'] == nil then
               premium_point = temp.xpath('.//point/premiumamount').text
             else
-              premium_point = (yahoo_price.to_f * premium_point.to_f).round
+              premium_point = (yahoo_price.to_f * premium_times).round
             end
 
             softbank_point = (yahoo_price.to_f * 0.05).round
