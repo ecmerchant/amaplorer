@@ -45,7 +45,7 @@ class Product < ApplicationRecord
         Retryable.retryable(tries: 10, sleep: 2.0) do
           res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
           rcounter += 1
-          sleep(rcounter*5)
+          sleep(rcounter*10)
           logger.debug(res.error)
         end
         counter = 0
@@ -333,12 +333,16 @@ class Product < ApplicationRecord
     affiliate = "http%3A%2F%2Fck.jp.ap.valuecommerce.com%2Fservlet%2Freferral%3Fsid%3D3143367%26pid%3D883269369%26vc_url%3D"
 
     maxnum = data.length
-
     account = Account.find_by(user: user)
 
     yaid1 = ENV['YAHOO_APPID']
     yaid2 = ENV['YAHOO_APPID2']
     yaid3 = ENV['YAHOO_APPID3']
+
+    premium_times = ENV['PREMIUM_TIMES']
+    if premium_times == nil then
+      premium_times = 0.05
+    end
 
     if yaid2 == nil then
       yaid2 = yaid1
@@ -493,7 +497,13 @@ class Product < ApplicationRecord
             logger.debug(yahoo_title)
 
             normal_point = temp.xpath('.//point/amount').text
-            premium_point = temp.xpath('.//point/premiumamount').text
+
+            if ENV['PREMIUM_TIMES'] == nil then
+              premium_point = temp.xpath('.//point/premiumamount').text
+            else
+              premium_point = (yahoo_price.to_f * premium_point.to_f).round
+            end
+
             softbank_point = (yahoo_price.to_f * 0.05).round
 
             logger.debug("=== Points ====")
