@@ -36,9 +36,7 @@ class Product < ApplicationRecord
       orgasins.each_slice(10) do |arr|
         logger.debug("\n======START=========")
         asins = arr
-        logger.debug("\n\n")
         logger.debug(asins)
-        logger.debug("\n\n")
         res = nil
         logger.debug("===== PAAPI =======")
         rcounter = 0

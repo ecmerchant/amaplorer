@@ -228,6 +228,13 @@ class ProductsController < ApplicationController
     redirect_to products_search_path
   end
 
+  def destroy
+    @product = Product.find(params[:id])
+    @product.update(
+      listing: false
+    )
+    redirect_to products_list_path
+  end
 
   private
   def user_params
