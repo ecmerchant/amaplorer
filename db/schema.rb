@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180916142106) do
+ActiveRecord::Schema.define(version: 20181103143740) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "user"
@@ -73,6 +73,7 @@ ActiveRecord::Schema.define(version: 20180916142106) do
     t.integer  "listing_count"
     t.integer  "fba_fee"
     t.string   "yahoo_url"
+    t.string   "amazon_url"
     t.index ["user", "asin"], name: "index_products_on_user_and_asin", unique: true
   end
 

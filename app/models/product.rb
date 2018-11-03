@@ -59,6 +59,7 @@ class Product < ApplicationRecord
           logger.debug(mpn)
           image = item.get('SmallImage/URL')
           logger.debug(image)
+          detail_url = item.get('ItemAttributes/DetailPageURL')
           if image == nil || image == "" then
             logger.debug("image is nothing")
             image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
@@ -69,7 +70,7 @@ class Product < ApplicationRecord
           end
           temp = target.find_by(asin: asin)
           if temp != nil then
-            temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image)
+            temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image, amazon_url: detail_url)
             counter += 1
           end
         end
