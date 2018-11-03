@@ -36,7 +36,7 @@
             <% if temp.listing == true then checked = 'checked="checked"' else checked = "" end %>
             <% checked = "" %>
             <td width="9%"><br><br><%= temp.asin %></td>
-            <td width="15%" style="white-space: normal; text-overflow: clip; font-size: 8pt;"><img src="<%= temp.amazon_image %>" alt="アマゾン画像" height="60" /><br><a href="<% if temp.amazon_url != nil then temp.amazon_url else "https://www.amazon.co.jp/dp/" + temp.asin %>" target="_blank" style="color:black;"><%= temp.title %></a></td>
+            <td width="15%" style="white-space: normal; text-overflow: clip; font-size: 8pt;"><img src="<%= temp.amazon_image %>" alt="アマゾン画像" height="60" /><br><a href="<%= if temp.amazon_url != nil then temp.amazon_url else 'https://www.amazon.co.jp/dp/' + temp.asin end %>" target="_blank" style="color:black;"><%= temp.title %></a></td>
             <td width="15%" style="white-space: normal; text-overflow: clip; font-size: 8pt;"><% if temp.yahoo_code != nil then %><img src="<%= temp.yahoo_image %>" alt="ヤフオク画像" height="60" /><br><a href="<% if temp.yahoo_url.to_s != "" then %><%= temp.yahoo_url.to_s%><% else %>https://store.shopping.yahoo.co.jp/<%= temp.yahoo_code.gsub("_","/") %><% end %>" target="_blank" style="color:black;" ><%= temp.yahoo_title %></a><% else %><br><br><%= temp.yahoo_title %><% end %></td>
             <td width="7%" style="text-align:center; font-size: 10pt;"><br><br><%= aprice.to_i %></td>
             <td width="7%" style="text-align:center; font-size: 10pt;"><br><br><%= (aprice * temp.amazon_fee.to_f).to_i %></td>

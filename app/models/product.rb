@@ -59,7 +59,7 @@ class Product < ApplicationRecord
           logger.debug(mpn)
           image = item.get('SmallImage/URL')
           logger.debug(image)
-          detail_url = item.get('ItemAttributes/DetailPageURL')
+          detail_url = item.get('DetailPageURL')
           if image == nil || image == "" then
             logger.debug("image is nothing")
             image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
