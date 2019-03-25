@@ -49,7 +49,7 @@ class GetAsinJob < ApplicationJob
         begin
           if i > 400 then break end
           url = org_url + '&page=' + i.to_s
-          logger.debug("URL：" + url)
+          logger.debug("URL--：" + url)
 
           sleep(1.1)
           cc = 0
@@ -73,36 +73,42 @@ class GetAsinJob < ApplicationJob
 
           #終了条件2：ASINがヒットしない
           if asins.count == 0 then
-            user_agent = ua.sample
-            logger.debug("ASINなし")
-            sleep(5)
+            logger.debug("case 1")
+            asins = doc.css('div/@data-asin')
+            if asins.count == 0 then
+              logger.debug("case 2")
 
-            t = Time.now
-            strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-            account.msend(
-              "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
-              ENV['ADMIN_CW_API_TOKEN'],
-              ENV['ADMIN_CW_ROOM_ID']
-            )
+              logger.debug(html)
+              return
+              user_agent = ua.sample
+              logger.debug("ASINなし")
+              sleep(5)
 
-            begin
-              html = open(url, "User-Agent" => user_agent) do |f|
-                charset = f.charset
-                f.read # htmlを読み込んで変数htmlに渡す
+              t = Time.now
+              strTime = t.strftime("%Y年%m月%d日 %H時%M分")
+              account.msend(
+                "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
+                ENV['ADMIN_CW_API_TOKEN'],
+                ENV['ADMIN_CW_ROOM_ID']
+              )
+
+              begin
+                html = open(url, "User-Agent" => user_agent) do |f|
+                  charset = f.charset
+                  f.read # htmlを読み込んで変数htmlに渡す
+                end
+              rescue OpenURI::HTTPError => error
+                response = error.io
+                logger.debug("\nNo." + i.to_s + "\n")
+                logger.debug("error!!")
+                logger.debug(error)
+                cc += 1
+                retry if cc < upto
+                next
               end
-            rescue OpenURI::HTTPError => error
-              response = error.io
-              logger.debug("\nNo." + i.to_s + "\n")
-              logger.debug("error!!")
-              logger.debug(error)
-              cc += 1
-              retry if cc < upto
-              next
+              #break
             end
-
-            #break
           end
-
           #終了条件1：検索結果がヒットしない
           #hbody = html.force_encoding("UTF-8")
           rnum = html.match(/<span id="s-result-count">([\s\S]*?)</)

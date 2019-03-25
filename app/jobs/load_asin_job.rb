@@ -69,6 +69,10 @@ class LoadAsinJob < ApplicationJob
 
             doc = Nokogiri::HTML.parse(html, nil)
             asins = doc.css('li/@data-asin')
+            if asins.count == 0 then
+              logger.debug("------88-------")
+              asins = doc.css('div/@data-asin')
+            end
 
             #終了条件2：ASINがヒットしない
             if html.include?("の検索に一致する商品はありませんでした") == false && asins.count == 0 then
