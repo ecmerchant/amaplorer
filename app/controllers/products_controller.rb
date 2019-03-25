@@ -132,6 +132,11 @@ class ProductsController < ApplicationController
     end
   end
 
+  def contact
+    @login_user = current_user
+    @account = Account.find_or_create_by(user:current_user.email)
+  end
+
   def check
     if request.post? then
       user = params[:user]

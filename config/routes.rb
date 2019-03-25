@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   get 'products/list'
   post 'products/list'
 
+  get 'products/contact'
   get 'products/search'
   post 'products/search'
 
