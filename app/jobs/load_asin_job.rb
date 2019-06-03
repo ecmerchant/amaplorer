@@ -44,7 +44,7 @@ class LoadAsinJob < ApplicationJob
         #URLからASINリストの作成
         loop do
           begin
-            if i > 400 then break end
+            if i > 170 then break end #20190603_change
             url = org_url + '&page=' + i.to_s
             logger.debug("URL：" + url)
             sleep(1.1)
@@ -158,6 +158,13 @@ class LoadAsinJob < ApplicationJob
           doc = nil
           asins = nil
           i += 1
+          
+          if html.include?('<li class="a-disabled a-last">') then
+            logger.debug("----------------")
+            logger.debug("最終ページ")
+            break
+          end     
+                
         end
       elsif condition == 'from_file' then
         #ASINの入力方法:ファイルからの場合
