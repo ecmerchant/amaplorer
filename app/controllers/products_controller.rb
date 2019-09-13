@@ -44,7 +44,17 @@ class ProductsController < ApplicationController
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       
       queue_name = 'load_asin_' + current_user.email
-      if Resque.size(queue_name) == 0 then
+        
+      cflg = true
+      workers = Resque.workers
+      workers.each do |w|
+        qq = w.job['queue']
+        if qq == queue_name && w.working? then 
+          cflg = false
+        end 
+      end
+        
+      if Resque.size(queue_name) == 0 && cflg? then
         @account.msend(
           "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
           @account.cw_api_token,
@@ -202,7 +212,17 @@ class ProductsController < ApplicationController
     uid = account.unique_id
     queue_name = 'get_amazon_' + current_user.email
     sleep(2)
-    if Resque.size(queue_name) == 0 then  
+  
+    cflg = true   
+    workers = Resque.workers
+    workers.each do |w|
+      qq = w.job['queue']
+      if qq == queue_name && w.working? then 
+        cflg = false
+      end 
+    end
+
+    if Resque.size(queue_name) == 0 && cflg? then
       account.update(asin_status: "再取得準備中")
       GetItemDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
     end
@@ -214,7 +234,16 @@ class ProductsController < ApplicationController
     uid = account.unique_id
     queue_name = 'get_yahoo_' + current_user.email
     sleep(2)
-    if Resque.size(queue_name) == 0 then  
+    cflg = true   
+    workers = Resque.workers
+    workers.each do |w|
+      qq = w.job['queue']
+      if qq == queue_name && w.working? then 
+        cflg = false
+      end 
+    end
+
+    if Resque.size(queue_name) == 0 && cflg? then
       account.update(yahoo_status: "再取得準備中")
       GetYahooDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
     end
