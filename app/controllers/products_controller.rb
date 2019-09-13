@@ -43,7 +43,7 @@ class ProductsController < ApplicationController
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       
-      queue_name = 'load_asin' + current_user.email
+      queue_name = 'load_asin_' + current_user.email
       if Resque.size(queue_name) == 0 then
         @account.msend(
           "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
@@ -200,7 +200,7 @@ class ProductsController < ApplicationController
   def get_amazon
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
-    queue_name = 'get_amazon' + current_user.email
+    queue_name = 'get_amazon_' + current_user.email
     if Resque.size(queue_name) == 0 then  
       account.update(asin_status: "再取得準備中")
       GetItemDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
@@ -211,7 +211,7 @@ class ProductsController < ApplicationController
   def get_yahoo
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
-    queue_name = 'get_yahoo' + current_user.email
+    queue_name = 'get_yahoo_' + current_user.email
     if Resque.size(queue_name) == 0 then  
       account.update(yahoo_status: "再取得準備中")
       GetYahooDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
