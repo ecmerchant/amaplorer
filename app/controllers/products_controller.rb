@@ -39,7 +39,7 @@ class ProductsController < ApplicationController
         @account.update(amazon_url: arg2)
         arg3 = nil
       end
-
+      sleep(2)
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
       
@@ -201,6 +201,7 @@ class ProductsController < ApplicationController
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
     queue_name = 'get_amazon_' + current_user.email
+    sleep(2)
     if Resque.size(queue_name) == 0 then  
       account.update(asin_status: "再取得準備中")
       GetItemDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
@@ -212,6 +213,7 @@ class ProductsController < ApplicationController
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
     queue_name = 'get_yahoo_' + current_user.email
+    sleep(2)
     if Resque.size(queue_name) == 0 then  
       account.update(yahoo_status: "再取得準備中")
       GetYahooDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
