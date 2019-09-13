@@ -11,6 +11,7 @@ class Product < ApplicationRecord
     #PAAPIにアクセス
     account = Account.find_by(user: user)
     account.update(yahoo_status: "準備中")
+    account.update(amazon_status: "実行中 0%")
     ecounter = 0
 
     t = Time.now
@@ -92,7 +93,7 @@ class Product < ApplicationRecord
         logger.debug(asins)
         response = client.get_competitive_pricing_for_asin(asins)
         parser = response.parse
-        logger.debug(parser)
+        #logger.debug(parser)
 
         parser.each do |product|
           logger.debug("===========")
@@ -333,7 +334,7 @@ class Product < ApplicationRecord
 
     maxnum = data.length
     account = Account.find_by(user: user)
-
+    account.update(yahoo_status: "実行中 0%")
     yaid1 = ENV['YAHOO_APPID']
     yaid2 = ENV['YAHOO_APPID2']
     yaid3 = ENV['YAHOO_APPID3']
