@@ -21,12 +21,12 @@
           <div style="display:inline-flex">
             <div class="col-lg-8">
               <div class="form-inline" id="url_form">
-                <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
+                <%= submit_tag '取得開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
                 <%= label_tag 'search[url]', 'URL:', class:'form-label' %>
                 <%= text_field_tag 'search[url]','', class:'form-control' %>
               </div>
               <div class="form-inline" id="asin_form" style="display: none;">
-                <%= submit_tag '開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
+                <%= submit_tag '取得開始', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>&nbsp;&nbsp;&nbsp;
                 <div class="form-group" style="width: 280px">
                   <%= file_field_tag :file %>
                 </div>
@@ -36,9 +36,9 @@
             <div id="di_form" class="col-lg-4">
               <div style="display:inline-flex">
               <%= form_tag('/products/get_amazon', method:'get') do %>
-                <%= submit_tag 'A再実行', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>
+                <%= submit_tag 'A再実行', class:'btn btn-primary mr-2', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>
               <% end %>
-              &nbsp;&nbsp;&nbsp;
+
               <%= form_tag('/products/get_yahoo', method:'get') do %>
                 <%= submit_tag 'Y再実行', class:'btn btn-primary', onclick:'alert("受付けました。しばらく時間をおいてから画面を更新してください");' %>
               <% end %>
