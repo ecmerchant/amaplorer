@@ -42,13 +42,17 @@ class ProductsController < ApplicationController
 
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-      @account.msend(
-        "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
-        @account.cw_api_token,
-        @account.cw_room_id
-      )
-
-      LoadAsinJob.perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
+      
+      queue_name = 'load_asin' + current_user.email
+      if Resque.size(queue_name) == 0 then
+        @account.msend(
+          "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
+          @account.cw_api_token,
+          @account.cw_room_id
+        )
+        @account.update(asin_status: "実行中", amazon_status: "準備中", yahoo_status: "準備中")
+        LoadAsinJob.set(queue: queue_name).perform_later(current_user.email, arg1, arg2, arg3, @limitnum)
+      end
       #redirect_to products_search_path
     end
   end
@@ -196,14 +200,22 @@ class ProductsController < ApplicationController
   def get_amazon
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
-    GetItemDataJob.perform_later(current_user.email, uid)
+    queue_name = 'get_amazon' + current_user.email
+    if Resque.size(queue_name) == 0 then  
+      account.update(asin_status: "再取得準備中")
+      GetItemDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
+    end
     redirect_to products_search_path
   end
 
   def get_yahoo
     account = Account.find_by(user: current_user.email)
     uid = account.unique_id
-    GetYahooDataJob.perform_later(current_user.email, uid)
+    queue_name = 'get_yahoo' + current_user.email
+    if Resque.size(queue_name) == 0 then  
+      account.update(yahoo_status: "再取得準備中")
+      GetYahooDataJob.set(queue: queue_name).perform_later(current_user.email, uid)
+    end
     redirect_to products_search_path
   end
 
