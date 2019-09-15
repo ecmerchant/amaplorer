@@ -20,7 +20,7 @@ class LoadAsinJob < ApplicationJob
     account.update(asin_status: "実行中", amazon_status: "準備中", yahoo_status: "準備中")
     ecounter = 0
     cc = 0
-    upto = 5
+    upto = 10
     casins = Hash.new
 
     ulevel = account.user_level
@@ -61,7 +61,7 @@ class LoadAsinJob < ApplicationJob
 
               user_agent = ua.sample[0]
               logger.debug("user_agent:" + user_agent)
-              sleep(2.0 * (cc + 1))
+              sleep(10.0 * (cc + 1))
               cc += 1
               retry if cc < upto
               next
@@ -158,13 +158,13 @@ class LoadAsinJob < ApplicationJob
           doc = nil
           asins = nil
           i += 1
-          
+
           if html.include?('<li class="a-disabled a-last">') then
             logger.debug("----------------")
             logger.debug("最終ページ")
             break
-          end     
-                
+          end
+
         end
       elsif condition == 'from_file' then
         #ASINの入力方法:ファイルからの場合
