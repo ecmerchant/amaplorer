@@ -23,7 +23,8 @@ class ProductsController < ApplicationController
 
     if @account != nil then
       uid = Account.find_by(user: current_user.email).unique_id
-      @products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).where("profit > 0").order("profit DESC").limit(ENV['SHOW_NUM'])
+      #@products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).where("profit > 0").order("profit DESC").limit(ENV['SHOW_NUM'])
+      @products = Product.where(user: current_user.email, unique_id: uid, isvalid: true).order("profit DESC").limit(ENV['SHOW_NUM'])
     else
       @account = Account.new
       @products = nil
