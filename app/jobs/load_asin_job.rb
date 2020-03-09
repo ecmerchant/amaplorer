@@ -70,14 +70,8 @@ class LoadAsinJob < ApplicationJob
             doc = Nokogiri::HTML.parse(html, nil)
             asins = doc.css('li/@data-asin')
             if asins.count == 0 then
-              logger.debug("------88-------")
               asins = doc.css('div/@data-asin')
             end
-
-            logger.debug(html)
-
-            logger.debug("================================")
-            logger.debug(html.encoding)
 
             #終了条件2：ASINがヒットしない
             if html.include?("の検索に一致する商品はありませんでした") == false && asins.count == 0 then
@@ -95,28 +89,25 @@ class LoadAsinJob < ApplicationJob
                 logger.debug(error)
                 t = Time.now
                 strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-                account.msend(
-                  "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
-                  ENV['ADMIN_CW_API_TOKEN'],
-                  ENV['ADMIN_CW_ROOM_ID']
-                )
+                if account.cw_api_token.present? then
+                  account.msend(
+                    "【ヤフープレミアムハンター】\n ASIN取得エラー!!\nエラー内容:ASINなし\nユーザ：" + user.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユニークID:" + uid.to_s +  "\n発生時間:" + strTime,
+                    ENV['ADMIN_CW_API_TOKEN'],
+                    ENV['ADMIN_CW_ROOM_ID']
+                  )
+                end
                 cc += 1
                 retry if cc < upto
                 next
               end
-
               #break
             end
 
             #終了条件1：検索結果がヒットしない
-            #hbody = html.force_encoding("UTF-8")
-            #rnum = hbody.match(/<span id="s-result-count">([\s\S]*?)</)
             rnum = html.match(/<span id="s-result-count">([\s\S]*?)</)
-            logger.debug("==========================")
             if rnum != nil then
               logger.debug(rnum[1])
             end
-            logger.debug("==========================")
 
             #if hbody.include?("0件の検索結果") then
             if html.include?("の検索に一致する商品はありませんでした") then
@@ -134,6 +125,7 @@ class LoadAsinJob < ApplicationJob
               tag = temp_asin.to_s
 
               if casins.key?(tag) == false then
+                logger.debug("ASIN: " + tag.to_s)
                 asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
                 casins[tag] = ecounter
                 ecounter += 1
@@ -163,6 +155,9 @@ class LoadAsinJob < ApplicationJob
           doc = nil
           asins = nil
           i += 1
+
+          logger.debug("最終ページcheck")
+          logger.debug(html.include?('<li class="a-disabled a-last">'))
 
           if html.include?('<li class="a-disabled a-last">') then
             logger.debug("----------------")
@@ -210,7 +205,6 @@ class LoadAsinJob < ApplicationJob
 
       if ecounter != 0 then
         account.update(asin_status: "完了 約" + ecounter.to_s + "件済")
-
         Product.import asin_list, on_duplicate_key_update: {constraint_name: :for_upsert, columns: [:unique_id, :isvalid]}
         asin_list = nil
         casins = nil
@@ -221,11 +215,14 @@ class LoadAsinJob < ApplicationJob
 
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-        account.msend(
-          "【ヤフープレミアムハンター】\nASIN取得完了しました。" + ecounter.to_s +  "件取得。\n終了時間："+strTime,
-          account.cw_api_token,
-          account.cw_room_id
-        )
+
+        if account.cw_api_token.present? then
+          account.msend(
+            "【ヤフープレミアムハンター】\nASIN取得完了しました。" + ecounter.to_s +  "件取得。\n終了時間："+strTime,
+            account.cw_api_token,
+            account.cw_room_id
+          )
+        end
 
         a = Product.new
         a.amazon(user, uid)
@@ -235,21 +232,25 @@ class LoadAsinJob < ApplicationJob
         account.update(asin_status: "ASIN取得失敗")
         t = Time.now
         strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-        account.msend(
-          "【ヤフープレミアムハンター】\nASIN取得失敗。\n終了時間："+ strTime ,
-          account.cw_api_token,
-          account.cw_room_id
-        )
+        if account.cw_api_token.present? then
+          account.msend(
+            "【ヤフープレミアムハンター】\nASIN取得失敗。\n終了時間："+ strTime ,
+            account.cw_api_token,
+            account.cw_room_id
+          )
+        end
       end
 
     rescue => e
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-      account.msend(
-        "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n取得数:" + ecounter.to_s + "\n発生時間:" + strTime,
-        ENV['ADMIN_CW_API_TOKEN'],
-        ENV['ADMIN_CW_ROOM_ID']
-      )
+      if account.cw_api_token.present? then
+        account.msend(
+          "【ヤフープレミアムハンター】\nASIN取得エラー!!\nエラー内容:" + e.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n取得数:" + ecounter.to_s + "\n発生時間:" + strTime,
+          ENV['ADMIN_CW_API_TOKEN'],
+          ENV['ADMIN_CW_ROOM_ID']
+        )
+      end
     end
 
     #メモリ開放用

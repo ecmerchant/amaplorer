@@ -5,6 +5,7 @@ class Product < ApplicationRecord
   require 'typhoeus'
   require 'uri'
   require 'open-uri'
+  require 'vacuum'
 
   def amazon(user, uid)
     logger.debug("\n====START AMAZON DATA=======")
@@ -16,59 +17,91 @@ class Product < ApplicationRecord
 
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-    account.msend(
-      "【ヤフープレミアムハンター】\nアマゾン取得開始しました。\n開始時間："+strTime,
-      account.cw_api_token,
-      account.cw_room_id
-    )
-    begin
+    if account.cw_api_token.present? then
+      account.msend(
+        "【ヤフープレミアムハンター】\nアマゾン取得開始しました。\n開始時間："+strTime,
+        account.cw_api_token,
+        account.cw_room_id
+      )
+    end
 
-      Amazon::Ecs.configure do |options|
-        options[:AWS_access_key_id] = ENV['PA_AWS_ACCESS_KEY_ID']
-        options[:AWS_secret_key] = ENV['PA_AWS_SECRET_KEY_ID']
-        options[:associate_tag] = ENV['PA_ASSOCIATE_TAG']
-      end
+    begin
+      logger.debug("\n====== begin =======")
 
       target = Product.where(user:user, unique_id:uid)
       orgasins = target.group(:asin).pluck(:asin)
-
       maxnum = orgasins.length
 
-      orgasins.each_slice(10) do |arr|
-        logger.debug("\n======START=========")
-        asins = arr
+      orgasins.each_slice(10) do |asins|
+        logger.debug("\n====== PAAPI START =========")
         logger.debug(asins)
-        res = nil
-        logger.debug("===== PAAPI =======")
         rcounter = 0
-        Retryable.retryable(tries: 10, sleep: 2.0) do
-          res = Amazon::Ecs.item_lookup(asins.join(','), {:IdType => 'ASIN', :country => 'jp', :ResponseGroup => 'Large'})
-          rcounter += 1
-          sleep(rcounter*10)
-          logger.debug(res.error)
+        response = nil
+
+        request = Vacuum.new(marketplace: 'JP',
+                       access_key: ENV['PA_AWS_ACCESS_KEY_ID'],
+                       secret_key: ENV['PA_AWS_SECRET_KEY_ID'],
+                       partner_tag: ENV['PA_ASSOCIATE_TAG'])
+
+        Retryable.retryable(tries: 5, sleep: 1.0) do |retries, exception|
+          response = request.get_items(
+            item_ids: asins,
+            resources: ['Images.Primary.Medium', 'ItemInfo.Title', 'ItemInfo.ExternalIds', 'ItemInfo.ManufactureInfo']
+          )
+          logger.debug(retries)
+          sleep(retries)
+          puts "try #{retries} failed with exception: #{exception}" if retries > 0
         end
+
+
         counter = 0
-        res.items.each do |item|
-          logger.debug(counter)
-          asin = item.get('ASIN')
-          logger.debug(asin)
-          title = item.get('ItemAttributes/Title')
-          logger.debug(title)
-          jan = item.get('ItemAttributes/EAN')
-          logger.debug(jan)
-          mpn = item.get('ItemAttributes/MPN')
-          logger.debug(mpn)
-          image = item.get('SmallImage/URL')
-          logger.debug(image)
-          detail_url = item.get('DetailPageURL')
-          if image == nil || image == "" then
-            logger.debug("image is nothing")
-            image = item.get('ImageSets/ImageSet[@Category="primary"]/SmallImage/URL')
-            if image == nil || image == "" then
-              logger.debug("image is nothing 2")
-              image = item.get('ImageSets/ImageSet/SmallImage/URL')
+        result_items = response.to_h.dig('ItemsResult', 'Items')
+        logger.debug(result_items)
+
+        logger.debug(1)
+
+        if result_items.class == Array then
+          logger.debug(2)
+          result_items.each do |item|
+            logger.debug(3)
+            asin = item.dig('ASIN')
+            detail_url = item.dig('DetailPageURL')
+            title = item.dig('ItemInfo', 'Title', 'DisplayValue')
+            jan = item.dig('ItemInfo', 'ExternalIds', 'EANs', 'DisplayValues', 0)
+            mpn = item.dig('ItemInfo', 'ManufactureInfo', 'ItemPartNumber', 'DisplayValues')
+            image = item.dig('Images', 'Primary', 'Medium', 'URL')
+
+            logger.debug("------------------------------------")
+            logger.debug("asin: " + asin.to_s)
+            logger.debug("title: " + title.to_s)
+            logger.debug("jan: " + jan.to_s)
+            logger.debug("mpn: " + mpn.to_s)
+            logger.debug("image: " + image.to_s)
+            logger.debug("detail_url: " + detail_url.to_s)
+
+            temp = target.find_by(asin: asin)
+            if temp != nil then
+              temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image, amazon_url: detail_url)
+              counter += 1
             end
+
           end
+        else
+          logger.debug(4)
+          item = result_items
+          asin = item.dig('ASIN')
+          title = item.dig('Title', 'DisplayValue')
+          jan = item.dig('ItemInfo', 'ExternalIds', 'EANs', 'DisplayValues', 0)
+          mpn = item.dig('ManufactureInfo', 'ItemPartNumber', 'DisplayValues')
+          image = item.dig('Images', 'Primary', 'Medium', 'URL')
+
+          logger.debug("------------------------------------")
+          logger.debug("asin: " + asin.to_s)
+          logger.debug("title: " + title.to_s)
+          logger.debug("jan: " + jan.to_s)
+          logger.debug("mpn: " + mpn.to_s)
+          logger.debug("image: " + image.to_s)
+
           temp = target.find_by(asin: asin)
           if temp != nil then
             temp.update(title: title, jan: jan, mpn: mpn, amazon_image: image, amazon_url: detail_url)
@@ -81,7 +114,7 @@ class Product < ApplicationRecord
         sid = account.seller_id.to_s.strip
         auth = account.mws_auth_token.to_s.strip
         client = MWS.products(
-          primary_marketplace_id: mp,
+          marketplace: mp,
           merchant_id: sid,
           auth_token: auth,
           aws_access_key_id: ENV['AWS_ACCESS_KEY_ID'],
@@ -91,7 +124,7 @@ class Product < ApplicationRecord
         logger.debug("get cart data")
         logger.debug("===== CART PRICE =======")
         logger.debug(asins)
-        response = client.get_competitive_pricing_for_asin(asins)
+        response = client.get_competitive_pricing_for_asin(mp, asins)
         parser = response.parse
         #logger.debug(parser)
 
@@ -151,7 +184,7 @@ class Product < ApplicationRecord
         end
 
         logger.debug("===== LOWEST NEW =======")
-        response = client.get_lowest_offer_listings_for_asin(asins,{item_condition: "New"})
+        response = client.get_lowest_offer_listings_for_asin(mp, asins, {item_condition: "New"})
         parser = response.parse
 
         if parser.class == Array then
@@ -285,6 +318,10 @@ class Product < ApplicationRecord
 
           temp = target.find_by(asin: asin)
           if temp != nil then
+            if temp.cart_price.to_i == 0 && temp.lowest_price.to_i == 0 then
+              fee = 0
+              fbafee = 0
+            end
             temp.update(amazon_fee: fee, fba_fee: fbafee)
           end
         end
@@ -298,25 +335,30 @@ class Product < ApplicationRecord
         logger.debug("\n======END=========")
       end
     rescue => e
+      logger.debug(e)
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-      account.msend(
-        "【ヤフープレミアムハンター】\nアマゾン取得エラー!!\nエラー内容:" + e.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
-        ENV['ADMIN_CW_API_TOKEN'],
-        ENV['ADMIN_CW_ROOM_ID']
-      )
+      if account.cw_api_token.present? then
+        account.msend(
+          "【ヤフープレミアムハンター】\nアマゾン取得エラー!!\nエラー内容:" + e.to_s + "\nエラー箇所：" + e.backtrace[0].to_s + "\nユーザ：" + user.to_s + "\nユニークID:" + uid.to_s + "\n発生時間:" + strTime,
+          ENV['ADMIN_CW_API_TOKEN'],
+          ENV['ADMIN_CW_ROOM_ID']
+        )
+      end
     end
 
     account.update(amazon_status: "完了")
 
     t = Time.now
     strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-    account.msend(
-      "【ヤフープレミアムハンター】\nアマゾン取得終了しました。\n終了時間："+strTime,
-      account.cw_api_token,
-      account.cw_room_id
-    )
 
+    if account.cw_api_token.present? then
+      account.msend(
+        "【ヤフープレミアムハンター】\nアマゾン取得終了しました。\n終了時間："+strTime,
+        account.cw_api_token,
+        account.cw_room_id
+      )
+    end
     logger.debug("\n====END AMAZON DATA=======")
   end
 

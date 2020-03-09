@@ -8,6 +8,7 @@ class ProductsController < ApplicationController
   require 'date'
   require 'kconv'
   require 'activerecord-import'
+  
 
   before_action :authenticate_user!, :except => [:check, :regist]
   protect_from_forgery :except => [:check, :regist]
@@ -43,18 +44,18 @@ class ProductsController < ApplicationController
       sleep(2)
       t = Time.now
       strTime = t.strftime("%Y年%m月%d日 %H時%M分")
-      
+
       queue_name = 'load_asin_' + current_user.email
-        
+
       cflg = true
       workers = Resque.workers
       workers.each do |w|
         qq = w.job['queue']
-        if qq == queue_name && w.working? then 
+        if qq == queue_name && w.working? then
           cflg = false
-        end 
+        end
       end
-        
+
       if Resque.size(queue_name) == 0 && cflg then
         @account.msend(
           "===================================\n【ヤフープレミアムハンター】\nリサーチを受け付けました。\n開始時間：" + strTime + "\n条件：" + arg1.to_s + " " + arg2,
@@ -72,7 +73,8 @@ class ProductsController < ApplicationController
     @login_user = current_user
     @account = Account.find_by(user: current_user.email)
     temp = Product.where(listing: true)
-    @products = temp.order("RANDOM()").limit(6)
+    #@products = temp.order("RANDOM()").limit(6)
+    @products = temp.sample(6)
     @comment = Messenger.order("created_at DESC").first(3)
   end
 
@@ -213,14 +215,14 @@ class ProductsController < ApplicationController
     uid = account.unique_id
     queue_name = 'get_amazon_' + current_user.email
     sleep(2)
-  
-    cflg = true   
+
+    cflg = true
     workers = Resque.workers
     workers.each do |w|
       qq = w.job['queue']
-      if qq == queue_name && w.working? then 
+      if qq == queue_name && w.working? then
         cflg = false
-      end 
+      end
     end
 
     if Resque.size(queue_name) == 0 && cflg then
@@ -235,13 +237,13 @@ class ProductsController < ApplicationController
     uid = account.unique_id
     queue_name = 'get_yahoo_' + current_user.email
     sleep(2)
-    cflg = true   
+    cflg = true
     workers = Resque.workers
     workers.each do |w|
       qq = w.job['queue']
-      if qq == queue_name && w.working? then 
+      if qq == queue_name && w.working? then
         cflg = false
-      end 
+      end
     end
 
     if Resque.size(queue_name) == 0 && cflg then
