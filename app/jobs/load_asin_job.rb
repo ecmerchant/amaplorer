@@ -123,15 +123,16 @@ class LoadAsinJob < ApplicationJob
             asins.each do |temp_asin|
               #asin.push(temp_asin)
               tag = temp_asin.to_s
-
-              if casins.key?(tag) == false then
-                logger.debug("ASIN: " + tag.to_s)
-                asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
-                casins[tag] = ecounter
-                ecounter += 1
+              logger.debug(tag)
+              if tag.present? then
+                if casins.key?(tag) == false then
+                  logger.debug("ASIN: " + tag.to_s)
+                  asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
+                  casins[tag] = ecounter
+                  ecounter += 1
+                end
               end
 
-              logger.debug(tag)
               #asin_list << Product.new(user:user, asin:tag, unique_id: uid, isvalid: true)
               #asin_list << Product.new(asin:tag)
               #temp = tproduct.find_or_create_by(asin:tag)
