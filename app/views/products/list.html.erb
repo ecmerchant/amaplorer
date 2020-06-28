@@ -17,7 +17,7 @@
             <th width="7%">ヤフショ<br>送料</th>
             <th width="7%" class="info text-danger">利益額</th>
             <th width="5%">利益率</th>
-            <th width="5%">モノ<br>レート</th>
+            <th width="5%">デルタ<br>トレーサ</th>
             <th width="5%">出品<br>制限</th>
             <th width="4%">削除</th>
           </tr>
@@ -49,7 +49,7 @@
               <td width="7%" style="text-align:center; font-size: 10pt;" class="warning"><br><br><b><%= profit %></b></td>
             <% end  %>
             <td width="5%" style="text-align:center; font-size: 10pt;"><br><br><% if profit != 0 && (temp.yahoo_price.to_f - points) != 0 then %><%= (((aprice - (aprice * temp.amazon_fee.to_f) - (temp.yahoo_price.to_f - points + temp.yahoo_shipping.to_f)) / (temp.yahoo_price.to_f - points))*100).round(1) %><% else %>0<% end %></td>
-            <td width="5%"><br><br><a href="https://mnrate.com/item/aid/<%= temp.asin %>" target="_blank"><%= image_tag('mnrate.png', :height => "30pt") %></a></td>
+            <td width="5%"><br><br><a href="https://delta-tracer.com/item/detail/jp/<%= temp.asin %>" target="_blank"><%= image_tag('mnrate.png', :height => "30pt") %></a></td>
             <td width="5%"><br><br><a href="https://sellercentral.amazon.co.jp/productsearch?q=<%= temp.asin %>" target="_blank"><%= image_tag('amazon.png', :height => "30pt") %></a></td>
             <td width="4%"><br><br><%= link_to "削除", {:controller => "products", :action => "destroy", :id => temp.id}, method: :delete %></td>
           </tr>
