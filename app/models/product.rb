@@ -406,7 +406,8 @@ class Product < ApplicationRecord
       skip = 5
     end
     logger.debug(skip)
-    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&affiliate_type=vc&affiliate_id=' + affiliate + '&condition=new&availability=1'
+    #endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V1/itemSearch?appid=' + yahoo_appid.to_s + '&affiliate_type=vc&affiliate_id=' + affiliate + '&condition=new&availability=1'
+    endpoint = 'https://shopping.yahooapis.jp/ShoppingWebService/V3/itemSearch?appid=' + yahoo_appid.to_s + '&affiliate_type=vc&affiliate_id=' + affiliate + '&condition=new&in_stock=true'
 
     cand = 0
     dd = 0
@@ -446,7 +447,7 @@ class Product < ApplicationRecord
       logger.debug(asin)
 
       query = jan
-      url = endpoint + '&jan=' + query.to_s + '&price_from=' + lp.to_s
+      url = endpoint + '&jan_code=' + query.to_s + '&price_from=' + lp.to_s
 
       if query == nil then
         if mpn != nil then
@@ -485,40 +486,22 @@ class Product < ApplicationRecord
             f.read # htmlを読み込んで変数htmlに渡す
           end
 
-          doc = Nokogiri::HTML.parse(html, nil, charset)
-
-          temp = doc.xpath('//hit[@index="1"]')[0]
+          doc = JSON.parse(html)
+          temp = doc["hits"]
           isvalid = false
-
           logger.debug("==== Item Hit? =====")
-
           if temp != nil then
             logger.debug("==== Item Found =====")
-            page = temp.xpath('.//url')[0].text
-            logger.debug(page)
+            buf = temp.first
+            page = buf["url"]
+            yahoo_code = buf["code"]
+            yahoo_price = buf["price"]
+            yahoo_shipping = buf["shipping"]["code"]
 
-            #yahoo_code = page.match(/jp\/([\s\S]*?)\.html/)[1]
-            #yahoo_code = yahoo_code.gsub("/","_")
-            yahoo_code = temp.xpath('.//code')[0].text
-            logger.debug(yahoo_code)
-
-            #request2 = Typhoeus::Request.new(page)
-            #request2.run
-            #html2 = request2.response.body
-
-            yahoo_price = temp.xpath('.//price').text
-
-            logger.debug(yahoo_price)
-
-            yahoo_shipping = temp.xpath('.//shipping/code').text
-            logger.debug("yahoo_shipping")
-            logger.debug(yahoo_shipping)
             if yahoo_shipping.to_i == 2 || yahoo_shipping.to_i == 3  then
               yahoo_shipping = 0
             else
-              yahoo_shipping = temp.xpath('.//shipping/name').text
-              logger.debug("yahoo_shipping_name")
-              logger.debug(yahoo_shipping)
+              yahoo_shipping = buf["shipping"]["name"]
               yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)
               if yahoo_shipping != nil then
                 yahoo_shipping = yahoo_shipping.match(/送料([\s\S]*?)円/)[1]
@@ -528,20 +511,17 @@ class Product < ApplicationRecord
               end
             end
 
-            logger.debug(yahoo_shipping)
-
-            yahoo_title = temp.xpath('.//name').text
-            yahoo_image = temp.xpath('.//image/small').text
+            yahoo_title = buf["name"]
+            yahoo_image = buf["image"]["small"]
 
             normal_point = 0
             premium_point = 0
             softbank_point = 0
-            logger.debug(yahoo_title)
 
-            normal_point = temp.xpath('.//point/amount').text
+            normal_point = buf["point"]["amount"]
 
             if ENV['PREMIUM_TIMES'] == nil then
-              premium_point = temp.xpath('.//point/premiumamount').text
+              premium_point = buf["point"]["premiumAmount"]
             else
               premium_point = (yahoo_price.to_f * premium_times.to_f).round
             end
