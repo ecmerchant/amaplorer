@@ -490,7 +490,7 @@ class Product < ApplicationRecord
           temp = doc["hits"]
           isvalid = false
           logger.debug("==== Item Hit? =====")
-          if temp != nil then
+          if temp.first != nil then
             logger.debug("==== Item Found =====")
             buf = temp.first
             page = buf["url"]
